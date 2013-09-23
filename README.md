@@ -1,2 +1,2 @@
 
-This is a University of Edinburgh Intelligent Intelligent Autonomous Robotics Practical repo
+This is a University of Edinburgh Intelligent Intelligent Autonomous Robotics Practical repo.
