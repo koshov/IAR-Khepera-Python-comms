@@ -1,10 +1,16 @@
 import serial
+from time import sleep
+
 
 class Robot():
 	""" Robot class - what else didi you expect?! """
 
 	def __init__(self):
 		self.serial_connection = serial.Serial(0,9600)
+		self.FULL_SPEED = 10
+		self.TIMEOUT = 0.01  # 10ms
+
+		self.state = State.initialise()
 
 	def closeConnection(self):
 		try:
@@ -40,3 +46,30 @@ class Robot():
 		self.serial_connection.write("H\n")
 		sensorString = self.serial_connection.readline()
 		print sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "h" at beginning
+
+	def monitorIR(self):
+		while True:
+			print self.readIR()
+			sleep(self.TIMEOUT)
+
+	def monitorAmbient(self):
+		while True:
+			print self.readAmbient()
+			sleep(self.TIMEOUT)
+
+
+class State():
+	""" Robot states """
+
+	def initialise(self):
+		pass
+
+	def follow_wall(self):
+		pass
+
+	def correct_position(self):
+		pass
+
+	def evade_obstacle(self):
+		pass
+
