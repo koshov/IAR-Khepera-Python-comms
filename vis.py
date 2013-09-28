@@ -23,7 +23,7 @@ def readIR(ser):
 
 def animate():
     N = 8
-    rects = plt.bar(range(N), x, align='center')
+    rects = plt.bar(range(N), range(0,8), align='center')
 
     while True:
     	
