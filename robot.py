@@ -29,7 +29,6 @@ class Robot():
                 self.historicIR[i].append(vals[i])
             sleep(self.TIMEOUT)
             # print self.historicIR 
-
         self.baseIR = [sum(list)/self.smoothIterations for list in self.historicIR]
         print self.baseIR
 
@@ -93,6 +92,19 @@ class Robot():
             if value < 0 or value > 1024:
                 return None
         return result
+
+    def scaleIR(self,value,i):
+        return (value - self.baseIR[i])/(1020 - self.baseIR[i])
+
+    """
+    This will read the sensors values
+    and then scale them down according to the calibration
+    """
+    def readScaled(self):
+        vals = self.readIR()
+        for i in range(0,len(vals)):
+            vals[i] = self.scaleIR(vals[i],i)
+        return vals
 
     def readIR(self):
         self.serial_connection.write("N\n")
