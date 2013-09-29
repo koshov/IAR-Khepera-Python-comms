@@ -21,7 +21,7 @@ class Obsticle(Event):
         sensor_values = self.robot.readIR()
         if sensor_values is not None:
             for value in sensor_values:
-                if int(value) > 350:
+                if int(value) > 320:
                     print sensor_values
                     return True
             return False

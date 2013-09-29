@@ -12,6 +12,9 @@ class Robot():
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
         self.FULL_SPEED = 10
         self.TIMEOUT = 0.0005  # 1ms
+        self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
+
+        self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -32,6 +35,7 @@ class Robot():
                 print "Transitioned to " + self.state.name
 
         sleep(self.TIMEOUT)
+        # sleep(1)
 
     class Action():
         def __init__(self, robot):
@@ -75,7 +79,15 @@ class Robot():
     def readIR(self):
         self.serial_connection.write("N\n")
         sensorString = self.serial_connection.readline()
-        return self.validateSensorValue(sensorString)
+        sensorArray = self.validateSensorValue(sensorString)
+        result = [0]*8
+        for i, value in enumerate(sensorArray):
+            del self.IRqueue[i][0]
+            self.IRqueue[i].append(int(value))
+            result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
+        print sensorArray
+        print result
+        return result
 
     def readAmbient(self):
         self.serial_connection.write("O\n")
