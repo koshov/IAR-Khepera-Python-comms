@@ -2,7 +2,12 @@ import serial
 import matplotlib.pyplot as plt
 import numpy as np
 
-ser = serial.Serial(0, 9600)
+ser = serial.Serial(0, 9600, timeout=0.1)
+
+shit = ser.readline()
+while shit != "":
+    print shit
+    shit = ser.readline()
 
 def setup_backend(backend='TkAgg'):
     import sys
@@ -26,13 +31,13 @@ def animate():
     rects = plt.bar(range(N), range(0,8), align='center')
 
     while True:
-    	
-    	for i in range(8):
-    		# x = data[i]
-    		for rect, h in zip(rects, readIR(ser)):
-    			if(h.isdigit()==True):
-    				rect.set_height(int(h))
-    		fig.canvas.draw()
+        
+        for i in range(8):
+            # x = data[i]
+            for rect, h in zip(rects, readIR(ser)):
+                if(h.isdigit()==True):
+                    rect.set_height(int(h))
+            fig.canvas.draw()
 
 # plt.yticks(range(1,1000))
 plt = setup_backend()

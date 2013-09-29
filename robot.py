@@ -10,14 +10,12 @@ class Robot():
 
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
-        self.FULL_SPEED = 20
-        self.TIMEOUT = 0.001  # 1ms
+        self.FULL_SPEED = 10
+        self.TIMEOUT = 0.0005  # 1ms
 
-        # self.serial_connection.write("D,0,0\n")
         shit = self.serial_connection.readline()
         while shit != "":
             print shit
-            # self.serial_connection.write("D,0,0\n")
             shit = self.serial_connection.readline()
 
         sleep(1)
