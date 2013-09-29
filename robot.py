@@ -11,7 +11,7 @@ class Robot():
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
         self.FULL_SPEED = 10
-        self.TIMEOUT = 0.0005  # 1ms
+        self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
 
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
@@ -20,12 +20,28 @@ class Robot():
         while shit != "":
             print shit
             shit = self.serial_connection.readline()
+        
+        self.historicIR = [[],[],[],[],[],[],[],[]]
+        self.smoothIterations = 100
+        for i in range(self.smoothIterations):
+            vals = self.readIR()
+            for i in range(8):
+                self.historicIR[i].append(vals[i])
+            sleep(self.TIMEOUT)
+            # print self.historicIR 
 
-        sleep(1)
+        self.baseIR = [sum(list)/self.smoothIterations for list in self.historicIR]
+        print self.baseIR
+
+
+
+    def run(self):
         self.state = state.Initial(self)
-
-        while True:
-            self.thick()
+        try:
+            while True:
+                self.thick()
+        except KeyboardInterrupt, e:
+            self.stop()
 
     def thick(self):
         for event in self.state.events:
@@ -37,6 +53,8 @@ class Robot():
         sleep(self.TIMEOUT)
         # sleep(1)
 
+
+    # Actions
     class Action():
         def __init__(self, robot):
             pass            
@@ -85,8 +103,8 @@ class Robot():
             del self.IRqueue[i][0]
             self.IRqueue[i].append(int(value))
             result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
-        print sensorArray
-        print result
+        # print sensorArray
+        # print result
         return result
 
     def readAmbient(self):
