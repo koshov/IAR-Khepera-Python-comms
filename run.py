@@ -1,7 +1,4 @@
-from functions import *
+import robot
 
-s = openConnection()
-
-readCount(s)
-
+r = robot.Robot()
 

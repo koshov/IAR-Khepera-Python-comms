@@ -1,75 +1,115 @@
 import serial
 from time import sleep
 
+import state
+import event
 
 class Robot():
-	""" Robot class - what else didi you expect?! """
+    """ Robot class - what else didi you expect?! """
+    # TODO: sensor valuies to INT!!!!
 
-	def __init__(self):
-		self.serial_connection = serial.Serial(0,9600)
-		self.FULL_SPEED = 10
-		self.TIMEOUT = 0.01  # 10ms
+    def __init__(self):
+        self.serial_connection = serial.Serial(0,9600, timeout=0.1)
+        self.FULL_SPEED = 20
+        self.TIMEOUT = 0.001  # 1ms
 
-		self.state = State.initialise()
+        # self.serial_connection.write("D,0,0\n")
+        shit = self.serial_connection.readline()
+        while shit != "":
+            print shit
+            # self.serial_connection.write("D,0,0\n")
+            shit = self.serial_connection.readline()
 
-	def closeConnection(self):
-		try:
-			self.serial_connection.close()
-		except Exception, e:
-			print e
+        sleep(1)
+        self.state = state.Initial(self)
 
-	def setSpeeds(self, leftSpeed, rightSpeed):
-		self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
-		self.serial_connection.readline()
+        while True:
+            self.thick()
 
-	def go(self, speed):
-		self.setSpeeds(speed, speed)
+    def thick(self):
+        for event in self.state.events:
+            if event.check():
+                event.call()
+                self.state = event.transition
+                print "Transitioned to " + self.state.name
 
-	def stop(self):
-		self.go(0)
+        sleep(self.TIMEOUT)
 
-	def readIR(self):
-		self.serial_connection.write("N\n")
-		sensorString = self.serial_connection.readline()
-		return sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
+    class Action():
+        def __init__(self, robot):
+            pass            
 
-	def readAmbient(self):
-		self.serial_connection.write("O\n")
-		sensorString = self.serial_connection.readline()
-		return sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "o" at beginning
-
-	def setCounts(self, leftCount, rightCount):
-		self.serial_connection.write("G,"+str(leftCount)+","+str(rightCount)+"\n")
-		self.serial_connection.readline()
-
-	def readCount(self):
-		self.serial_connection.write("H\n")
-		sensorString = self.serial_connection.readline()
-		print sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "h" at beginning
-
-	def monitorIR(self):
-		while True:
-			print self.readIR()
-			sleep(self.TIMEOUT)
-
-	def monitorAmbient(self):
-		while True:
-			print self.readAmbient()
-			sleep(self.TIMEOUT)
+    class Move_forward(Action):
+        def __init__(self, robot):
+            self.events = [event.Odometry(robot)]
+            robot.go(robot.FULL_SPEED)
 
 
-class State():
-	""" Robot states """
 
-	def initialise(self):
-		pass
+    # Khepera functions
+    def closeConnection(self):
+        try:
+            self.serial_connection.close()
+        except Exception, e:
+            print e
 
-	def follow_wall(self):
-		pass
+    def setSpeeds(self, leftSpeed, rightSpeed):
+        self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
+        self.serial_connection.readline()
 
-	def correct_position(self):
-		pass
+    def go(self, speed):
+        self.setSpeeds(speed, speed)
 
-	def evade_obstacle(self):
-		pass
+    def stop(self):
+        self.go(0)
+
+    def validateSensorValue(self, sensorString):
+        # print sensorString
+        result = sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
+        if len(result) < 8:
+            return None
+        for value in result:
+            value = int(value)
+            if value < 0 or value > 1024:
+                return None
+        return result
+
+    def readIR(self):
+        self.serial_connection.write("N\n")
+        sensorString = self.serial_connection.readline()
+        return self.validateSensorValue(sensorString)
+
+    def readAmbient(self):
+        self.serial_connection.write("O\n")
+        sensorString = self.serial_connection.readline()
+        return self.validateSensorValue(sensorString)
+
+    def setCounts(self, leftCount, rightCount):
+        self.serial_connection.write("G,"+str(leftCount)+","+str(rightCount)+"\n")
+        self.serial_connection.readline()
+
+    def readCount(self):
+        self.serial_connection.write("H\n")
+        sensorString = self.serial_connection.readline()
+        print self.validateSensorValue(sensorString)
+
+    def setLED(self, led, value):
+        if led == "left":
+            led = 0
+        else:
+            led = 1
+        self.serial_connection.write("L,"+led+","+value+"\n")
+
+    def monitorIR(self):
+        while True:
+            print self.readIR()
+            sleep(self.TIMEOUT)
+
+    def monitorAmbient(self):
+        while True:
+            print self.readAmbient()
+            sleep(self.TIMEOUT)
+
+
+
 
