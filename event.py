@@ -15,7 +15,7 @@ class Event():
 class Obsticle(Event):
     def __init__(self, robot):
         self.robot = robot
-        self.transition = state.State(robot)
+        self.transition = state.Follow_wall(robot)
 
     def check(self):
         sensor_values = self.robot.readIR()
@@ -29,6 +29,20 @@ class Obsticle(Event):
     def call(self):
         print "Stopping"
         self.robot.stop()
+
+class distanceChanged(Event):
+    def __init__(self, robot):
+        self.robot = robot
+        self.transition = state.State(robot)
+
+    def check(self):
+        sensor_values = self.robot.readScaled()
+        if sensor_values is not None:
+            return all(x<0.5 for x in sensor_values)
+
+    def call(self):
+        print "Distance Changed"
+        # self.robot.stop()
 
 class Odometry(Event):
     pass

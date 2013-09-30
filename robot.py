@@ -11,9 +11,9 @@ class Robot():
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
         self.FULL_SPEED = 10
+        self.state = "Initial State"
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
-
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
 
         shit = self.serial_connection.readline()
@@ -36,6 +36,7 @@ class Robot():
 
     def run(self):
         self.state = state.Initial(self)
+        self.__class__.state = self.state.name
         try:
             while True:
                 self.thick()
@@ -43,6 +44,7 @@ class Robot():
             self.stop()
 
     def thick(self):
+        print self.state.name
         for event in self.state.events:
             if event.check():
                 event.call()
@@ -61,7 +63,18 @@ class Robot():
     class Move_forward(Action):
         def __init__(self, robot):
             self.events = [event.Odometry(robot)]
+            print 'Moving Forward'
             robot.go(robot.FULL_SPEED)
+
+    class adjustToWall(Action):
+        def __init__(self, robot):
+            self.events = [event.distanceChanged(robot)]
+            self.robot = robot
+        def run(self):
+            pdb.set_trace()
+            print 'Adjusting to the wall'
+            self.robot.setSpeeds(-5,-5)
+            #Get the left sensors (0 and 1)
 
 
 
