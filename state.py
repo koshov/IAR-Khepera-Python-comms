@@ -17,10 +17,8 @@ class Initial(State):
 class Follow_wall(State):
     def __init__(self, robot):
         self.name = "Following Wall"
-        print 'ROBOT STATE IS:'+robot.state
-        if robot.state == self.name:
-            self.action = robot.adjustToWall(robot).run()
-            self.events = robot.adjustToWall(robot).events
+        self.action = robot.Adjust_to_wall(robot)
+        self.events = robot.Adjust_to_wall(robot).events
 
 class Correct_position(State):  
     pass

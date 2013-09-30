@@ -5,8 +5,9 @@ import state
 import event
 
 class Robot():
-    """ Robot class - what else didi you expect?! """
+    """ Robot class - what else did you expect?! """
     # TODO: sensor valuies to INT!!!!
+    # TODO: consolidate readIR etc
 
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
@@ -47,9 +48,11 @@ class Robot():
         print self.state.name
         for event in self.state.events:
             if event.check():
+                print "EVENT TRIGGERED"
                 event.call()
-                self.state = event.transition
-                print "Transitioned to " + self.state.name
+                self.state = event.transition()
+                print self.state
+                # print "Transitioned to " + self.state.name
 
         sleep(self.TIMEOUT)
         # sleep(1)
@@ -66,16 +69,13 @@ class Robot():
             print 'Moving Forward'
             robot.go(robot.FULL_SPEED)
 
-    class adjustToWall(Action):
+    class Adjust_to_wall(Action):
         def __init__(self, robot):
-            self.events = [event.distanceChanged(robot)]
+            self.events = [event.Distance_changed(robot)]
             self.robot = robot
-        def run(self):
-            pdb.set_trace()
-            print 'Adjusting to the wall'
-            self.robot.setSpeeds(-5,-5)
-            #Get the left sensors (0 and 1)
-
+            # print 'Adjusting to the wall'
+            self.robot.stop()
+            
 
 
     # Khepera functions
