@@ -1,4 +1,4 @@
-import serial
+ import serial
 from time import sleep
 
 import state
@@ -76,6 +76,23 @@ class Robot():
             # print 'Adjusting to the wall'
             self.robot.stop()
             
+    class Rotate_to_wall(Action):
+        def __init__(self, robot):
+            #Now get the sensors.
+            irs = self.robot.readScaled
+            left = sum(irs[0:2])
+            right = sum(irs[3:5])
+            #Check which wall is closer
+            if (left>right):
+                print 'Left wall is closer'
+                self.robot.setSpeeds(-5,5)
+                self.events = [event.Parallel_completed(robot, [1,0])]
+            else: 
+                print 'Right wall is closer'
+                self.robot.setSpeeds(5,-5)
+                self.events = [event.Parallel_completed(robot, [4,5])]
+
+
 
 
     # Khepera functions
