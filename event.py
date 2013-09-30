@@ -18,7 +18,6 @@ class Event():
 class Obsticle(Event):
     def __init__(self, robot):
         self.robot = robot
-        # self.transition = state.Follow_wall(robot)
 
     def check(self):
         sensor_values = self.robot.readIR()
@@ -31,27 +30,52 @@ class Obsticle(Event):
 
     def call(self):
         print "Stopping"
-        self.robot.stop()
+        # self.robot.stop()
 
     def transition(self):
         return state.Follow_wall(self.robot)
 
 class Distance_changed(Event):
-    def __init__(self, robot):
+    def __init__(self, robot, wall_position):
         self.robot = robot
-        # self.transition = state.State(robot)
+        self.wall_position = wall_position
 
     def check(self):
         sensor_values = self.robot.readScaled()
         if sensor_values is not None:
-            return all(x<0.5 for x in sensor_values)
+            if self.wall_position == "left":
+                if sensor_values[0] > 0.1:
+                    self.gain = ("left", sensor_values[0])
+                    return True
+                else:
+                    self.gain = ("right", sensor_values[0])
+                    return True                    
+            else:
+                if sensor_values[5] > 0.1:
+                    self.gain = ("right", sensor_values[5])
+                    return True
+                else:
+                    self.gain = ("left", sensor_values[5])
+                    return True   
+
+        return False
 
     def call(self):
-        print "Distance Changed"
-        # self.robot.stop()
+        speed  = self.robot.FULL_SPEED
+        print self.gain
+        speed_gain = speed + int(self.gain[1]*speed/4)
+        if self.gain[0] == "left":
+            print "L LEFT " + str(speed + speed_gain/2)
+            print "L RIGH " + str(speed - speed_gain*2)
+            self.robot.setSpeeds(speed + speed_gain, speed - speed_gain)
+        else:
+            print "R LEFT " + str(speed + speed_gain/2)
+            print "R RIGH " + str(speed - speed_gain*2)
+            self.robot.setSpeeds(speed - speed_gain, speed + speed_gain)
+
 
     def transition(self):
-        return state.State(self.robot)
+        return None
 
 class Odometry(Event):
     pass

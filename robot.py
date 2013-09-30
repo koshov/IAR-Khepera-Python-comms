@@ -11,7 +11,7 @@ class Robot():
 
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
-        self.FULL_SPEED = 10
+        self.FULL_SPEED = 5
         self.state = "Initial State"
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
@@ -45,13 +45,14 @@ class Robot():
             self.stop()
 
     def thick(self):
-        print self.state.name
+        # print self.state.name
         for event in self.state.events:
             if event.check():
-                print "EVENT TRIGGERED"
+                # print "EVENT TRIGGERED"
                 event.call()
-                self.state = event.transition()
-                print self.state
+                if event.transition() != None:
+                    self.state = event.transition()
+                # print self.state
                 # print "Transitioned to " + self.state.name
 
         sleep(self.TIMEOUT)
@@ -70,11 +71,12 @@ class Robot():
             robot.go(robot.FULL_SPEED)
 
     class Adjust_to_wall(Action):
-        def __init__(self, robot):
-            self.events = [event.Distance_changed(robot)]
+        def __init__(self, robot, wall_position):
             self.robot = robot
+            # self.wall_position = wall_position
+            self.events = [event.Distance_changed(robot, wall_position)]
             # print 'Adjusting to the wall'
-            self.robot.stop()
+            # self.robot.stop()
             
     class Rotate_to_wall(Action):
         def __init__(self, robot):
