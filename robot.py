@@ -1,4 +1,4 @@
- import serial
+import serial
 from time import sleep
 
 import state
@@ -8,6 +8,7 @@ class Robot():
     """ Robot class - what else did you expect?! """
     # TODO: sensor valuies to INT!!!!
     # TODO: consolidate readIR etc
+    # TODO: callibration history, learning of sensor data
 
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
@@ -16,6 +17,8 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
+
+        self.result = [0]*8  # readIR result TODO: rename
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -142,14 +145,15 @@ class Robot():
         self.serial_connection.write("N\n")
         sensorString = self.serial_connection.readline()
         sensorArray = self.validateSensorValue(sensorString)
-        result = [0]*8
-        for i, value in enumerate(sensorArray):
-            del self.IRqueue[i][0]
-            self.IRqueue[i].append(int(value))
-            result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
+        
+        if sensorArray != None:
+            for i, value in enumerate(sensorArray):
+                del self.IRqueue[i][0]
+                self.IRqueue[i].append(int(value))
+                self.result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
         # print sensorArray
         # print result
-        return result
+        return self.result
 
     def readAmbient(self):
         self.serial_connection.write("O\n")
@@ -183,5 +187,14 @@ class Robot():
             sleep(self.TIMEOUT)
 
 
+    def hump(self):
+        try:
+            while True:
+                self.go(100)
+                sleep(0.3)
+                self.go(-100)
+                sleep(0.3)
+        except KeyboardInterrupt, e:
+            self.stop()
 
 

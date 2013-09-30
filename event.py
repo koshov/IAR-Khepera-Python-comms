@@ -41,21 +41,27 @@ class Distance_changed(Event):
         self.wall_position = wall_position
 
     def check(self):
+        THRESHOLD = 0.2
         sensor_values = self.robot.readScaled()
+        if sensor_values[2] > THRESHOLD or sensor_values[1] > THRESHOLD or sensor_values[3] > THRESHOLD or sensor_values[4] > THRESHOLD:
+            front = self.robot.FULL_SPEED
+        else:
+            front = 0
+
         if sensor_values is not None:
             if self.wall_position == "left":
-                if sensor_values[0] > 0.1:
-                    self.gain = ("left", sensor_values[0])
+                if sensor_values[0] > THRESHOLD:
+                    self.gain = ("left", sensor_values[0] - THRESHOLD + front/self.robot.FULL_SPEED, front)
                     return True
                 else:
-                    self.gain = ("right", sensor_values[0])
+                    self.gain = ("right", (1-THRESHOLD) - sensor_values[0] * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
                     return True                    
             else:
-                if sensor_values[5] > 0.1:
-                    self.gain = ("right", sensor_values[5])
+                if sensor_values[5] > THRESHOLD:
+                    self.gain = ("right", sensor_values[5] - THRESHOLD + front/self.robot.FULL_SPEED, front)
                     return True
                 else:
-                    self.gain = ("left", sensor_values[5])
+                    self.gain = ("left", (1-THRESHOLD) - sensor_values[5] * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
                     return True   
 
         return False
@@ -63,15 +69,19 @@ class Distance_changed(Event):
     def call(self):
         speed  = self.robot.FULL_SPEED
         print self.gain
-        speed_gain = speed + int(self.gain[1]*speed/4)
+        in_place = int(self.gain[2])
+        print "Place %d"%in_place
+        speed_gain = int(self.gain[1]*speed*2)
         if self.gain[0] == "left":
-            print "L LEFT " + str(speed + speed_gain/2)
-            print "L RIGH " + str(speed - speed_gain*2)
-            self.robot.setSpeeds(speed + speed_gain, speed - speed_gain)
+            left = speed - in_place + speed_gain
+            right = speed - in_place - speed_gain
+            print "Left - L: %d, R: %d"%(left,right)
+            self.robot.setSpeeds(left, right)
         else:
-            print "R LEFT " + str(speed + speed_gain/2)
-            print "R RIGH " + str(speed - speed_gain*2)
-            self.robot.setSpeeds(speed - speed_gain, speed + speed_gain)
+            left = speed - in_place - speed_gain
+            right = speed - in_place + speed_gain
+            print "Left - L: %d, R: %d"%(left,right)
+            self.robot.setSpeeds(left, right)
 
 
     def transition(self):
