@@ -20,10 +20,10 @@ class Obsticle(Event):
         self.robot = robot
 
     def check(self):
-        sensor_values = self.robot.readIR()
+        sensor_values = self.robot.readScaledIR()
         if sensor_values is not None:
             for value in sensor_values:
-                if int(value) > 320:
+                if value > 0.32:
                     print sensor_values
                     return True
             return False
@@ -42,28 +42,24 @@ class Distance_changed(Event):
 
     def check(self):
         THRESHOLD = 0.2
-        sensor_values = self.robot.readScaled()
-        if sensor_values[2] > THRESHOLD or sensor_values[1] > THRESHOLD or sensor_values[3] > THRESHOLD or sensor_values[4] > THRESHOLD:
+        sensor_values = self.robot.readScaledIR()
+        if max([sensor_values[1], sensor_values[2], sensor_values[3], sensor_values[4]]) > THRESHOLD:
             front = self.robot.FULL_SPEED
         else:
             front = 0
 
         if sensor_values is not None:
-            if self.wall_position == "left":
-                if sensor_values[0] > THRESHOLD:
-                    self.gain = ("left", sensor_values[0] - THRESHOLD + front/self.robot.FULL_SPEED, front)
-                    return True
-                else:
-                    self.gain = ("right", (1-THRESHOLD) - sensor_values[0] * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
-                    return True                    
+            if sensor_values[0] > THRESHOLD:
+                if self.wall_position == "left": gain_dir = "left"
+                else: gain_dir = "right"
+                self.gain = (gain_dir, sensor_values[0] - THRESHOLD + front/self.robot.FULL_SPEED, front)
+                return True
             else:
-                if sensor_values[5] > THRESHOLD:
-                    self.gain = ("right", sensor_values[5] - THRESHOLD + front/self.robot.FULL_SPEED, front)
-                    return True
-                else:
-                    self.gain = ("left", (1-THRESHOLD) - sensor_values[5] * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
-                    return True   
-
+                if self.wall_position == "left": gain_dir = "right"
+                else: gain_dir = "left"
+                self.gain = (gain_dir, (1-THRESHOLD) - sensor_values[0] * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
+                return True                    
+ 
         return False
 
     def call(self):
@@ -98,10 +94,10 @@ class Parallel_completed(Event):
         # self.transition = state.State(robot)
 
     def check(self):
-        sensor_values = self.robot.readScaled()
+        sensor_values = self.robot.readScaledIR()
         if sensor_values is not None:
-            sensorOne = robot.readScaled[self.sensors[0]]
-            sensorTwo = robot.readScaled[self.sensors[1]]
+            sensorOne = robot.readScaledIR[self.sensors[0]]
+            sensorTwo = robot.readScaledIR[self.sensors[1]]
             #DRAGONS BE HERE.
             threshold = 0.039215686
             if (sensorOne - sensorTwo)> threshold:

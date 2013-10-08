@@ -39,7 +39,7 @@ def animate():
         
         for i in range(8):
             # x = data[i]
-            for rect, h in zip(rects, r.readScaled()):
+            for rect, h in zip(rects, r.readScaledIR()):
                 if(True):
                     rect.set_height(float(h))
                     # print h

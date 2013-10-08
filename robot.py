@@ -4,10 +4,10 @@ from time import sleep
 import state
 import event
 
+import cpickle as pickle
+
 class Robot():
     """ Robot class - what else did you expect?! """
-    # TODO: sensor valuies to INT!!!!
-    # TODO: consolidate readIR etc
     # TODO: callibration history, learning of sensor data
 
     def __init__(self):
@@ -18,7 +18,7 @@ class Robot():
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
 
-        self.result = [0]*8  # readIR result TODO: rename
+        self.gauss_result = [0]*8  # readIR result TODO: rename
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -84,7 +84,7 @@ class Robot():
     class Rotate_to_wall(Action):
         def __init__(self, robot):
             #Now get the sensors.
-            irs = self.robot.readScaled
+            irs = self.robot.readScaledIR
             left = sum(irs[0:2])
             right = sum(irs[3:5])
             #Check which wall is closer
@@ -135,10 +135,11 @@ class Robot():
     This will read the sensors values
     and then scale them down according to the calibration
     """
-    def readScaled(self):
+    def readScaledIR(self):
         vals = self.readIR()
         for i in range(0,len(vals)):
             vals[i] = self.scaleIR(vals[i],i)
+        print vals
         return vals
 
     def readIR(self):
@@ -150,10 +151,10 @@ class Robot():
             for i, value in enumerate(sensorArray):
                 del self.IRqueue[i][0]
                 self.IRqueue[i].append(int(value))
-                self.result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
+                self.gauss_result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
         # print sensorArray
         # print result
-        return self.result
+        return self.gauss_result
 
     def readAmbient(self):
         self.serial_connection.write("O\n")

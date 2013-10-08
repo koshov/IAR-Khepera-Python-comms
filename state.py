@@ -18,7 +18,7 @@ class Follow_wall(State):
     def __init__(self, robot):
         self.name = "Following Wall"
         # Determine on which side of robot the wall is
-        sensor_values = robot.readScaled()
+        sensor_values = robot.readScaledIR()
         if sum(sensor_values[0:2]) > sum(sensor_values[3:5]):
             print "WALL ON LEFT"
             self.wall_position = "left"
