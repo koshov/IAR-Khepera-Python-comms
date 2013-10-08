@@ -27,7 +27,7 @@ class Follow_wall(State):
             self.wall_position = "right"
 
         self.action = robot.Adjust_to_wall(robot, self.wall_position)
-        self.events = self.action.events
+        self.events = self.action.events + [event.Lost_obsticle(robot)]
 
 
 #This wil make the robot parallel to a wall
