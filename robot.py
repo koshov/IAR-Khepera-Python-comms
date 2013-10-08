@@ -23,6 +23,7 @@ class Robot():
         self.x = 0   #
         self.y = 0   #
         self.phi = 0 #
+        self.setCounts(0, 0)
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -120,7 +121,10 @@ class Robot():
         self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
         self.serial_connection.readline()
         data = self.readCount()
-        self.setOdometry(data[0],data[1])
+        self.setCounts(0, 0)
+        self.setOdometry(int(data[0]),int(data[1]))
+        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, self.phi)
+
 
     def go(self, speed):
         self.setSpeeds(speed, speed)
@@ -184,7 +188,8 @@ class Robot():
     def readCount(self):
         self.serial_connection.write("H\n")
         sensorString = self.serial_connection.readline()
-        print self.validateSensorValue(sensorString)
+        result = sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
+        return result
 
     def setLED(self, led, value):
         if led == "left":
