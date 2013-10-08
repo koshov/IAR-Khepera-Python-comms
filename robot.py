@@ -5,7 +5,7 @@ import state
 import event
 
 import cpickle as pickle
-
+from math import cos, sin
 class Robot():
     """ Robot class - what else did you expect?! """
     # TODO: callibration history, learning of sensor data
@@ -17,8 +17,13 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
-
+        self.wheelDiff = 53
         self.gauss_result = [0]*8  # readIR result TODO: rename
+
+        #Odometry#####
+        self.x = 0   #
+        self.y = 0   #
+        self.phi = 0 #
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -110,6 +115,8 @@ class Robot():
     def setSpeeds(self, leftSpeed, rightSpeed):
         self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
         self.serial_connection.readline()
+        data = self.readCount()
+        self.setOdometry(data[0],data[1])
 
     def go(self, speed):
         self.setSpeeds(speed, speed)
@@ -164,6 +171,12 @@ class Robot():
     def setCounts(self, leftCount, rightCount):
         self.serial_connection.write("G,"+str(leftCount)+","+str(rightCount)+"\n")
         self.serial_connection.readline()
+
+    def setOdometry(self,left,right):
+        self.x = self.x + 0.5 * (left + right) * cos(self.phi)
+        self.y = self.y + 0.5 * (left + right) * sin(self.phi)
+        self.phi = self.phi - 0.5 * (left + right) / 2 * self.wheelDiff
+
 
     def readCount(self):
         self.serial_connection.write("H\n")
