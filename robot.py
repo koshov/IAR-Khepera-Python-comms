@@ -1,14 +1,13 @@
 import serial
 from time import sleep
-
 import state
 import event
-
-import cpickle as pickle
 from math import cos, sin
+import cPickle as pickle
+
+
 class Robot():
     """ Robot class - what else did you expect?! """
-    # TODO: callibration history, learning of sensor data
 
     def __init__(self):
         self.serial_connection = serial.Serial(0,9600, timeout=0.1)
@@ -30,16 +29,10 @@ class Robot():
             print shit
             shit = self.serial_connection.readline()
         
-        self.historicIR = [[],[],[],[],[],[],[],[]]
-        self.smoothIterations = 100
-        for i in range(self.smoothIterations):
-            vals = self.readIR()
-            for i in range(8):
-                self.historicIR[i].append(vals[i])
-            sleep(self.TIMEOUT)
-            # print self.historicIR 
-        self.baseIR = [sum(list)/self.smoothIterations for list in self.historicIR]
-        print self.baseIR
+        try:
+            self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
+        except IOError:
+            self.min_IR_readings = self.calibrateIR()
 
 
 
@@ -56,15 +49,26 @@ class Robot():
         # print self.state.name
         for event in self.state.events:
             if event.check():
-                # print "EVENT TRIGGERED"
                 event.call()
                 if event.transition() != None:
                     self.state = event.transition()
-                # print self.state
                 # print "Transitioned to " + self.state.name
 
         sleep(self.TIMEOUT)
         # sleep(1)
+
+    def calibrateIR (self):
+        historicIR = [[],[],[],[],[],[],[],[]]
+        smoothIterations = 100
+        for i in range(smoothIterations):
+            vals = self.readIR()
+            for i in range(8):
+                historicIR[i].append(vals[i])
+            sleep(self.TIMEOUT)
+        min_IR_readings = [sum(list)/smoothIterations for list in historicIR]
+        pickle.dump(min_IR_readings, open("min_IR_readings.p", "wb"))
+        print "Minimum IR levels after calibration:\n%s"%min_IR_readings
+        return min_IR_readings
 
 
     # Actions
@@ -136,7 +140,7 @@ class Robot():
         return result
 
     def scaleIR(self,value,i):
-        return (value - self.baseIR[i])/(1020 - self.baseIR[i])
+        return (value - self.min_IR_readings[i])/(1020 - self.min_IR_readings[i])
 
     """
     This will read the sensors values
@@ -146,7 +150,6 @@ class Robot():
         vals = self.readIR()
         for i in range(0,len(vals)):
             vals[i] = self.scaleIR(vals[i],i)
-        print vals
         return vals
 
     def readIR(self):
