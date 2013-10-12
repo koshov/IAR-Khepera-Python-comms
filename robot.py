@@ -187,10 +187,10 @@ class Robot():
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
         self.phi = self.phi - 0.5 * (left - right) / (2 * self.wheelDiff)
         #Ensure that phi is between -3.14 and 3.14
-        if self.phi > pi or self.phi < -(pi):
-            self.phi = (self.phi % pi) + -(pi)
-        elif self.phi < -(pi):
-            self.phi = pi + (self.phi % pi)
+        if self.phi > pi: #Bigger than 180 deg
+            self.phi = (self.phi % pi) + (-pi)
+        elif self.phi < (-pi): # Less than -180 deg
+            self.phi = (self.phi % pi)
 
 
     def readCount(self):
