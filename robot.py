@@ -120,10 +120,10 @@ class Robot():
     def setSpeeds(self, leftSpeed, rightSpeed):
         self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
         self.serial_connection.readline()
-        data = self.readCount()
-        self.setCounts(0, 0)
-        self.setOdometry(int(data[0]),int(data[1]))
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, self.phi)
+        # data = self.readCount()
+        # self.setCounts(0, 0)
+        # self.setOdometry(int(data[0]),int(data[1]))
+        # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, self.phi)
 
 
     def go(self, speed):
