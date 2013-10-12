@@ -2,7 +2,7 @@ import serial
 from time import sleep
 import state
 import event
-from math import cos, sin
+from math import cos, sin, pi, degrees
 import cPickle as pickle
 
 
@@ -48,6 +48,14 @@ class Robot():
 
     def thick(self):
         # print self.state.name
+        data = self.readCount()
+        self.setCounts(0, 0)
+        if len(data) > 1:
+            print "Counts are:" + str(data)
+            # testVar = self.readCount()
+            # print 'The counts are now ' + str(testVar)
+            self.setOdometry(int(data[0]),int(data[1]))
+        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, degrees(self.phi))
         for event in self.state.events:
             if event.check():
                 event.call()
@@ -120,10 +128,6 @@ class Robot():
     def setSpeeds(self, leftSpeed, rightSpeed):
         self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
         self.serial_connection.readline()
-        data = self.readCount()
-        self.setCounts(0, 0)
-        self.setOdometry(int(data[0]),int(data[1]))
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, self.phi)
 
 
     def go(self, speed):
@@ -182,7 +186,12 @@ class Robot():
     def setOdometry(self,left,right):
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
-        self.phi = self.phi - 0.5 * (left + right) / 2 * self.wheelDiff
+        self.phi = self.phi - 0.5 * (left - right) / (2 * self.wheelDiff)
+        #Ensure that phi is between -3.14 and 3.14
+        if self.phi > pi or self.phi < -(pi):
+            self.phi = (self.phi % pi) + -(pi)
+        elif self.phi < -(pi):
+            self.phi = pi + (self.phi % pi)
 
 
     def readCount(self):
