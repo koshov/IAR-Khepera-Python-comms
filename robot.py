@@ -129,7 +129,6 @@ class Robot():
         self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
         self.serial_connection.readline()
 
-
     def go(self, speed):
         self.setSpeeds(speed, speed)
 

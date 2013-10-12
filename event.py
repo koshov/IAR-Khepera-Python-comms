@@ -53,38 +53,68 @@ class Lost_obsticle(Event):
     def transition(self):
         return state.Initial(self.robot)
 
+# class In_corner(Event):
+#     def __init__(self, robot):
+#         self.robot = robot
+#         self.THRESHOLD = 0.2    
+
+#     def check(self):
+#         sensor_values = self.robot.readScaledIR()
+#         if sensor_values is not None:
+#             if (sensor_values[0]+sensor_values[1]/2 > self.THRESHOLD and sensor_values[4]+sensor_values[5]/2 > self.THRESHOLD):
+#                 return True
+#             return False
+
+#     def call(self):
+#         print "In a tight corner"
+
+#     def transition(self):
+#         return state.Escape_corner(self.robot)
+
 class Distance_changed(Event):
     def __init__(self, robot, wall_position):
         self.robot = robot
         self.wall_position = wall_position
+        self.THRESHOLD = 0.2
 
     def check(self):
-        THRESHOLD = 0.2
         sensor_values = self.robot.readScaledIR()
-        if max([sensor_values[1], sensor_values[2], sensor_values[3], sensor_values[4]]) > THRESHOLD:
+        if self.wall_position == "left":
+            first_sensors = max([sensor_values[1], sensor_values[2]])
+            second_sensors = max([sensor_values[3], sensor_values[4]])
+        else:
+            first_sensors = max([sensor_values[3], sensor_values[4]])
+            second_sensors = max([sensor_values[1], sensor_values[2]])
+
+        if first_sensors > self.THRESHOLD or second_sensors > self.THRESHOLD * 2:
             front = self.robot.FULL_SPEED
         else:
             front = 0
 
-        # TODO: 
         if sensor_values is not None:
-            if max([sensor_values[0], sensor_values[5]]) > THRESHOLD:
-                if self.wall_position == "left": 
-                    gain_dir = "left"
-                    sensor_vals = sensor_values[0]
-                else: 
-                    gain_dir = "right"
-                    sensor_vals = sensor_values[5]
-                self.gain = (gain_dir, sensor_vals * 0.5 - THRESHOLD + front/self.robot.FULL_SPEED, front)
+            if self.wall_position == "left": 
+                gain_dir = ["left", "right"]
+                target_wall = sensor_values[0]
+                other_wall = sensor_values[5]
+            else: 
+                gain_dir = ["right", "left"]
+                target_wall = sensor_values[5]
+                other_wall = sensor_values[0]
+                    
+            # Escape from nearby wall
+            if max([sensor_values[0], sensor_values[5]]) > self.THRESHOLD:
+                if target_wall > other_wall:
+                    gain_direction = gain_dir[0]
+                    sensor_val = target_wall
+                else:
+                    gain_direction = gain_dir[1]
+                    sensor_val = other_wall
+
+                self.gain = (gain_direction, sensor_val * 0.5 - self.THRESHOLD + front/self.robot.FULL_SPEED, front)
                 return True
+            # Move towards wall when loosing it
             else:
-                if self.wall_position == "left": 
-                    gain_dir = "right"
-                    sensor_vals = sensor_values[0]
-                else: 
-                    gain_dir = "left"
-                    sensor_vals = sensor_values[5]
-                self.gain = (gain_dir, (1-THRESHOLD) - sensor_vals * (1-THRESHOLD)/THRESHOLD + front/self.robot.FULL_SPEED, front)
+                self.gain = (gain_dir[1], (1-self.THRESHOLD) - target_wall * (1-self.THRESHOLD)/self.THRESHOLD + front/self.robot.FULL_SPEED, front)
                 return True                    
  
         return False

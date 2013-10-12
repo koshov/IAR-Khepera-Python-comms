@@ -27,7 +27,14 @@ class Follow_wall(State):
             self.wall_position = "right"
 
         self.action = robot.Adjust_to_wall(robot, self.wall_position)
-        self.events = self.action.events + [event.Lost_obsticle(robot)]
+        self.events = self.action.events + [event.Lost_obsticle(robot)]#, event.In_corner(robot)]
+
+# class Escape_corner(State):
+#     def __init__(self, robot):
+#         self.name = "Escape Corner"
+
+#         self.action = robot.Leave_wall_behind(robot, )
+#         self.events = self.action.events + [event.Lost_obsticle(robot), event.Tight_corner(robot)]
 
 
 #This wil make the robot parallel to a wall
