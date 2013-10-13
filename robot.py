@@ -1,6 +1,6 @@
 import serial
 from multiprocessing import Process
-# from worldMap import worldMap
+from worldMap import WorldMap
 from time import sleep
 import state
 import event
@@ -20,6 +20,8 @@ class Robot():
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
         self.wheelDiff = 163.45212655537651 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0]*8  # readIR result TODO: rename
+        self.sensor_values = []
+        self.world_map = WorldMap()
 
         #Odometry#####
         self.x = 0   #
@@ -50,14 +52,16 @@ class Robot():
 
     def thick(self):
         # print self.state.name
+        self.sensor_values = self.readScaledIR()
         data = self.readCount()
         self.setCounts(0, 0)
         if len(data) > 1:
-            print "Counts are:" + str(data)
+            # print "Counts are:" + str(data)
             # testVar = self.readCount()
             # print 'The counts are now ' + str(testVar)
             self.setOdometry(int(data[0]),int(data[1]))
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        self.world_map.update((self.x, self.y, self.phi), self.sensor_values)
         for event in self.state.events:
             if event.check():
                 event.call()
@@ -192,10 +196,10 @@ class Robot():
         # print '-(left - right)' + str(self.phi - (left-right))
         # print 'DENOMINATOR:' + str(4*self.wheelDiff)
         self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
-        print 'FIRST:' + str(self.phi)
+        # print 'FIRST:' + str(self.phi)
         # self.phi = abs(self.phi) % pi
-        print 'RESULT:' + str(self.phi)
-        print 'DEGREES:' + str(degrees(self.phi % 2*pi))
+        # print 'RESULT:' + str(self.phi)
+        # print 'DEGREES:' + str(degrees(self.phi % 2*pi))
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
         
@@ -262,8 +266,8 @@ class Robot():
         data = self.readCount()
         # print "Initial Counts:" + str(data)
         #Start Moving Forward
-        self.setSpeeds(10,10)
-        sleep(0.125)
+        self.setSpeeds(1,1)
+        sleep(1.25)
         self.setSpeeds(0,0)
         #Stop moving forward and measure wheels
         data = self.readCount()

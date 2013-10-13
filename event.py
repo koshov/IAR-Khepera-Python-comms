@@ -20,7 +20,7 @@ class Obsticle(Event):
         self.robot = robot
 
     def check(self):
-        sensor_values = self.robot.readScaledIR()
+        sensor_values = self.robot.sensor_values
         if sensor_values is not None:
             for value in sensor_values:
                 if value > 0.32:
@@ -40,7 +40,7 @@ class Lost_obsticle(Event):
         self.robot = robot
 
     def check(self):
-        sensor_values = self.robot.readScaledIR()
+        sensor_values = self.robot.sensor_values
         if sensor_values is not None:
             if max(sensor_values) < 0.025:
                 return True
@@ -59,7 +59,7 @@ class Lost_obsticle(Event):
 #         self.THRESHOLD = 0.2    
 
 #     def check(self):
-#         sensor_values = self.robot.readScaledIR()
+#         sensor_values = self.robot.sensor_values
 #         if sensor_values is not None:
 #             if (sensor_values[0]+sensor_values[1]/2 > self.THRESHOLD and sensor_values[4]+sensor_values[5]/2 > self.THRESHOLD):
 #                 return True
@@ -78,7 +78,7 @@ class Distance_changed(Event):
         self.THRESHOLD = 0.2
 
     def check(self):
-        sensor_values = self.robot.readScaledIR()
+        sensor_values = self.robot.sensor_values
         if self.wall_position == "left":
             first_sensors = max([sensor_values[1], sensor_values[2]])
             second_sensors = max([sensor_values[3], sensor_values[4]])
@@ -151,7 +151,7 @@ class Parallel_completed(Event):
         # self.transition = state.State(robot)
 
     def check(self):
-        sensor_values = self.robot.readScaledIR()
+        sensor_values = self.robot.sensor_values
         if sensor_values is not None:
             sensorOne = robot.readScaledIR[self.sensors[0]]
             sensorTwo = robot.readScaledIR[self.sensors[1]]
