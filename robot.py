@@ -57,7 +57,7 @@ class Robot():
             # testVar = self.readCount()
             # print 'The counts are now ' + str(testVar)
             self.setOdometry(int(data[0]),int(data[1]))
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, degrees(self.phi))
+        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
         for event in self.state.events:
             if event.check():
                 event.call()
@@ -192,9 +192,14 @@ class Robot():
         # print '-(left - right)' + str(self.phi - (left-right))
         # print 'DENOMINATOR:' + str(4*self.wheelDiff)
         self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
-        # print 'RESULT:' + str(self.phi)
+        print 'FIRST:' + str(self.phi)
+        # self.phi = abs(self.phi) % pi
+        print 'RESULT:' + str(self.phi)
+        print 'DEGREES:' + str(degrees(self.phi % 2*pi))
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
+        
+        
         #Ensure that phi is between -3.14 and 3.14
         # if self.phi > pi: #Bigger than 180 deg
         #     self.phi = (self.phi % pi) + (-pi)
@@ -241,7 +246,7 @@ class Robot():
         data = self.readCount()
         print "Initial Counts:" + str(data)
         #Start Rotation
-        self.setSpeeds(10,-10)
+        self.setSpeeds(-10,10)
         sleep(2.0800000000000001)
         self.setSpeeds(0,0)
         #Stop rotation and measure wheels
@@ -250,5 +255,20 @@ class Robot():
             print "Final counts are:" + str(data[0])+ ' and ' + str(data[1])
             self.setOdometry(int(data[0]),int(data[1]))
         print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-        print 'Degrees: %s'%(degrees(self.phi))
 
+
+    def measureMapping(self):
+        self.setCounts(0, 0)
+        data = self.readCount()
+        # print "Initial Counts:" + str(data)
+        #Start Moving Forward
+        self.setSpeeds(10,10)
+        sleep(0.125)
+        self.setSpeeds(0,0)
+        #Stop moving forward and measure wheels
+        data = self.readCount()
+        if len(data) > 1:
+            # print "Final counts are:" + str(data[0])+ ' and ' + str(data[1])
+            self.setOdometry(int(data[0]),int(data[1]))
+        # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        print 'For 1cm, x= %s'%(self.x)
