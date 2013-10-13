@@ -16,13 +16,13 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
-        self.wheelDiff = 53
+        self.wheelDiff = 163.45212655537651 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0]*8  # readIR result TODO: rename
 
         #Odometry#####
         self.x = 0   #
         self.y = 0   #
-        self.phi = 0 #
+        self.phi = 0.0 #
         self.setCounts(0, 0)
 
         shit = self.serial_connection.readline()
@@ -183,14 +183,21 @@ class Robot():
         self.serial_connection.readline()
 
     def setOdometry(self,left,right):
+        # print 'FROM ODOMETRY METHOD:'
+        # print 'LEFT:'+ str(left)
+        # print 'RIGHT:' + str(right)
+        # print 'PHI0:' + str(self.phi)
+        # print '-(left - right)' + str(self.phi - (left-right))
+        # print 'DENOMINATOR:' + str(4*self.wheelDiff)
+        self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
+        # print 'RESULT:' + str(self.phi)
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
-        self.phi = self.phi - 0.5 * (left - right) / (2 * self.wheelDiff)
         #Ensure that phi is between -3.14 and 3.14
-        if self.phi > pi: #Bigger than 180 deg
-            self.phi = (self.phi % pi) + (-pi)
-        elif self.phi < (-pi): # Less than -180 deg
-            self.phi = (self.phi % pi)
+        # if self.phi > pi: #Bigger than 180 deg
+        #     self.phi = (self.phi % pi) + (-pi)
+        # elif self.phi < (-pi): # Less than -180 deg
+        #     self.phi = (self.phi % pi)
 
 
     def readCount(self):
@@ -227,4 +234,19 @@ class Robot():
         except KeyboardInterrupt, e:
             self.stop()
 
+    def rot(self):
+        self.setCounts(0, 0)
+        data = self.readCount()
+        print "Initial Counts:" + str(data)
+        #Start Rotation
+        self.setSpeeds(10,-10)
+        sleep(2.0800000000000001)
+        self.setSpeeds(0,0)
+        #Stop rotation and measure wheels
+        data = self.readCount()
+        if len(data) > 1:
+            print "Final counts are:" + str(data[0])+ ' and ' + str(data[1])
+            self.setOdometry(int(data[0]),int(data[1]))
+        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        print 'Degrees: %s'%(degrees(self.phi))
 
