@@ -216,9 +216,11 @@ class Robot():
 
 
     def readCount(self):
+        t = time()
         self.serial_connection.write("H\n")
         sensorString = self.serial_connection.readline()
         result = sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
+        print "READCOUNT TAKES: %f"%((time() - t))
         return result
 
     def setLED(self, led, value):
