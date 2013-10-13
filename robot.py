@@ -1,6 +1,6 @@
 import serial
 from multiprocessing import Process, Pipe
-from worldMap import WorldMap
+from worldMap import worldMap
 from time import sleep, time, clock
 import state
 import event
@@ -18,13 +18,13 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
-        self.wheelDiff = 163.45212655537651 # This can also be broken up to the differential plus the calibration factor
+        self.wheelDiff = 53.0 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0]*8  # readIR result TODO: rename
         self.sensor_values = []
 
-        # self.pipe, child_pipe = Pipe()
-        # self.world_map = Process(target=WorldMap(), args=(child_pipe, ))
-        # self.world_map.start()
+        self.pipe, child_pipe = Pipe()
+        self.world_map = Process(target=worldMap, args=(child_pipe, ))
+        self.world_map.start()
 
         #Odometry############
         self.x = 0     # :* #
@@ -52,20 +52,21 @@ class Robot():
                 self.thick()
         except KeyboardInterrupt, e:
             self.stop()
+            self.world_map.join()
 
     def thick(self):
         t = time()
         # print self.state.name
         self.sensor_values = self.readScaledIR()
         data = self.readCount()
-        # self.setCounts(0, 0)
-        # if len(data) > 1:
-        #     # print "Counts are:" + str(data)
-        #     # testVar = self.readCount()
-        #     # print 'The counts are now ' + str(testVar)
-        #     self.setOdometry(int(data[0]),int(data[1]))
+        self.setCounts(0, 0)
+        if len(data) > 1:
+            # print "Counts are:" + str(data)
+            # testVar = self.readCount()
+            # print 'The counts are now ' + str(testVar)
+            self.setOdometry(int(data[0]),int(data[1]))
         # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-        # self.world_map.update((self.x, self.y, self.phi), self.sensor_values)
+        self.pipe.send(((self.x, self.y, self.phi), self.sensor_values))
         for event in self.state.events:
             if event.check():
                 event.call()

@@ -1,64 +1,107 @@
 from math import radians, sin, cos
 
-import matplotlib.pyplot as pylab
+import matplotlib.pyplot as pl
 import numpy
 
 
-class WorldMap():
+def worldMap(pipe):
     """
     Map legend:
     1 - obstacle
     2 - robot path 
     """
-    
-    def __init__(self, pipe):
-        self.pipe = pipe
+    import matplotlib.pyplot as plt
+    import numpy as np
 
-        self.world_map = {}
-        self.resolution = 100.0
-        self.wall_distance = 600 / self.resolution
-        self.threshhold = 0.2
-        khepera_angles = [305, 325, 350, 10, 35, 55]
-        self.sensor_angles = [radians(x) for x in khepera_angles]
+    def setup_backend(backend='TkAgg'):
+        import sys
+        del sys.modules['matplotlib.backends']
+        del sys.modules['matplotlib.pyplot']
+        import matplotlib as mpl
+        mpl.use(backend)  # do this before importing pyplot
+        import matplotlib.pyplot as plt
+        return plt
 
-        pylab.ion()
-        pylab.hold(False)
-        pylab.show()
-        # self.hl, = plt.plot([], [])
-        self.xs = []
-        self.ys = []
-        print "kur"
+    def loop():
+
+        # world_map = {}
+        resolution = 10.0
+        wall_distance = 200 / resolution
+        threshhold = 0.1
+        khepera_angles = [55, 35, 10, 350, 325, 305]
+        sensor_angles = [radians(x) for x in khepera_angles]
+
+        xs = [0]
+        ys = [0]
+        max_a = 200
+        min_a = -200
+        rescale = False
+
+        plt.axis([min_a, max_a, min_a, max_a])
+
+        wall_xs = []
+        wall_ys = []
+
+        while True:
+            (x, y, phi), sensorValues = pipe.recv()
+
+            r_x = x/resolution
+            r_y = y/resolution
+
+            temp_angles = [a + phi for a in sensor_angles]
+
+            obstacle_locations = []
+            for i in range(6):
+                if sensorValues[i] > threshhold:
+                    a = sensor_angles[i]
+                    a_location = ( round(cos(a)*wall_distance + r_x), round(sin(a)*wall_distance + r_y) )
+                    obstacle_locations.append( a_location )
+
+            r_x = round(r_x)
+            r_y = round(r_y)
+
+            if r_x > max_a:
+                max_a = r_x
+                rescale = True
+            elif r_x < min_a:
+                min_a = r_x
+                rescale = True
+            elif r_y > max_a:
+                max_a = r_y
+                rescale = True
+            elif r_y < min_a:
+                min_a = r_y
+                rescale = True
+
+            if rescale:
+                plt.axis([min_a, max_a, min_a, max_a])
+                rescale = False
+
+            # robot_location = (r_x, r_y)
+            # world_map[robot_location] = 2
+            # # print "Robot: x-%d y-%d"%(round(r_x), round(r_y))
+            # for location in obstacle_locations:
+            #     world_map[location] = 1
+            #     print "Wall: x- %d y- %d"%(location)
+
+            xs.append(r_x)
+            ys.append(r_y)
+
+            wall_xs += [x for (x,y) in obstacle_locations]
+            wall_ys += [y for (x,y) in obstacle_locations]
+
+            plt.plot(xs, ys, 'b+')
+            plt.plot(wall_xs, wall_ys, 'ro')
+            fig.canvas.draw()
+        
 
 
-    def update(self, (x, y, phi), sensorValues):
-        r_x = x/self.resolution
-        r_y = y/self.resolution
-
-        temp_angles = [x + phi for x in self.sensor_angles]
-        d = self.wall_distance
-
-        obstacle_locations = []
-        for i in range(6):
-            if sensorValues[i] > self.threshhold:
-                a = self.sensor_angles[i]
-                a_location = ( round(cos(a)*d + r_x), round(sin(a)*d + r_y) )
-                obstacle_locations.append( a_location )
-
-
-        robot_location = (round(r_x), round(r_y))
-        self.world_map[robot_location] = 2
-        # print "Robot: x-%d y-%d"%(round(r_x), round(r_y))
-        self.update_plot(robot_location)
-        for location in obstacle_locations:
-            self.world_map[location] = 1
-            print "Wall: x- %d y- %d"%(location)
-
-    def update_plot(self,  (x, y)):
-        self.xs.append(x)
-        self.ys.append(y)
-        pylab.plot(self.xs, self.ys)
-        # pylab.show()
-        # pylab.draw()
+    plt = setup_backend()
+    fig = plt.figure()
+    # plt.autoscale(enable=True, axis='both', tight=None)
+    win = fig.canvas.manager.window
+    win.after(1, loop)
+    plt.show()
 
 
 

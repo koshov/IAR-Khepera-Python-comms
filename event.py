@@ -23,7 +23,7 @@ class Obsticle(Event):
         sensor_values = self.robot.sensor_values
         if sensor_values is not None:
             for value in sensor_values:
-                if value > 0.32:
+                if value > 0.15:
                     # print sensor_values
                     return True
             return False
@@ -75,7 +75,7 @@ class Distance_changed(Event):
     def __init__(self, robot, wall_position):
         self.robot = robot
         self.wall_position = wall_position
-        self.THRESHOLD = 0.2
+        self.THRESHOLD = 0.15
 
     def check(self):
         sensor_values = self.robot.sensor_values
@@ -110,7 +110,7 @@ class Distance_changed(Event):
                     gain_direction = gain_dir[1]
                     sensor_val = other_wall
 
-                self.gain = (gain_direction, sensor_val * 0.5 - self.THRESHOLD + front/self.robot.FULL_SPEED, front)
+                self.gain = (gain_direction, sensor_val * 0.5  - self.THRESHOLD + front/self.robot.FULL_SPEED, front)
                 return True
             # Move towards wall when loosing it
             else:
