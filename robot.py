@@ -1,7 +1,7 @@
 import serial
-from multiprocessing import Process
+from multiprocessing import Process, Pipe
 from worldMap import WorldMap
-from time import sleep
+from time import sleep, time, clock
 import state
 import event
 from math import cos, sin, pi, degrees
@@ -21,13 +21,16 @@ class Robot():
         self.wheelDiff = 163.45212655537651 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0]*8  # readIR result TODO: rename
         self.sensor_values = []
-        self.world_map = WorldMap()
 
-        #Odometry#####
-        self.x = 0   #
-        self.y = 0   #
-        self.phi = 0.0 #
-        self.setCounts(0, 0)
+        # self.pipe, child_pipe = Pipe()
+        # self.world_map = Process(target=WorldMap(), args=(child_pipe, ))
+        # self.world_map.start()
+
+        #Odometry############
+        self.x = 0     # :* #
+        self.y = 0     ######
+        self.phi = 0.0      #
+        self.setCounts(0, 0)#
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -51,17 +54,18 @@ class Robot():
             self.stop()
 
     def thick(self):
+        t = time()
         # print self.state.name
         self.sensor_values = self.readScaledIR()
         data = self.readCount()
-        self.setCounts(0, 0)
-        if len(data) > 1:
-            # print "Counts are:" + str(data)
-            # testVar = self.readCount()
-            # print 'The counts are now ' + str(testVar)
-            self.setOdometry(int(data[0]),int(data[1]))
+        # self.setCounts(0, 0)
+        # if len(data) > 1:
+        #     # print "Counts are:" + str(data)
+        #     # testVar = self.readCount()
+        #     # print 'The counts are now ' + str(testVar)
+        #     self.setOdometry(int(data[0]),int(data[1]))
         # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-        self.world_map.update((self.x, self.y, self.phi), self.sensor_values)
+        # self.world_map.update((self.x, self.y, self.phi), self.sensor_values)
         for event in self.state.events:
             if event.check():
                 event.call()
@@ -69,8 +73,8 @@ class Robot():
                     self.state = event.transition()
                 # print "Transitioned to " + self.state.name
 
-        sleep(self.TIMEOUT)
-        # sleep(1)
+        print "FPS: %f"%(1/(time() - t))
+        # sleep(self.TIMEOUT)
 
     def calibrateIR (self):
         historicIR = [[],[],[],[],[],[],[],[]]
