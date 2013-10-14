@@ -200,14 +200,15 @@ class Robot():
         # print 'PHI0:' + str(self.phi)
         # print '-(left - right)' + str(self.phi - (left-right))
         # print 'DENOMINATOR:' + str(4*self.wheelDiff)
-        self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
         # print 'FIRST:' + str(self.phi)
         # self.phi = abs(self.phi) % pi
         # print 'RESULT:' + str(self.phi)
         # print 'DEGREES:' + str(degrees(self.phi % 2*pi))
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
-        
+        newPhi = self.phi - (left - right) / (4.0 * self.wheelDiff)
+        if newPhi > 6.2831853071795862 or newPhi< 0:
+            self.phi = newPhi % 2*pi
         
         #Ensure that phi is between -3.14 and 3.14
         # if self.phi > pi: #Bigger than 180 deg
