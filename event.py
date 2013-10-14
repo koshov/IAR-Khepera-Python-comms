@@ -23,7 +23,7 @@ class Obsticle(Event):
         sensor_values = self.robot.sensor_values
         if sensor_values is not None:
             for value in sensor_values:
-                if value > 0.15:
+                if value > 0.1:
                     # print sensor_values
                     return True
             return False
@@ -122,7 +122,7 @@ class Distance_changed(Event):
     def call(self):
         speed  = self.robot.FULL_SPEED
         # print self.gain
-        in_place = float(self.gain[2])
+        in_place = int(self.gain[2])
         # print "Place %d"%in_place
         speed_gain = int(self.gain[1]*speed*2)
         if self.gain[0] == "left":

@@ -44,7 +44,7 @@ def worldMap(pipe):
 
         while True:
             (x, y, phi), sensorValues = pipe.recv()
-            print phi
+            # print phi
 
             r_x = x/resolution
             r_y = y/resolution
@@ -88,11 +88,11 @@ def worldMap(pipe):
             xs.append(r_x)
             ys.append(r_y)
 
-            wall_xs += [x for (x,y) in obstacle_locations]
-            wall_ys += [y for (x,y) in obstacle_locations]
+            # wall_xs += [x for (x,y) in obstacle_locations]
+            # wall_ys += [y for (x,y) in obstacle_locations]
 
             plt.plot(xs, ys, 'b+')
-            plt.plot(wall_xs, wall_ys, 'ro')
+            # plt.plot(wall_xs, wall_ys, 'ro')
             fig.canvas.draw()
         
 
