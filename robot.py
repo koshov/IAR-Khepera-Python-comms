@@ -18,7 +18,7 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
-        self.wheelDiff = 64.8 # This can also be broken up to the differential plus the calibration factor
+        self.wheelDiff = 163.8 # This can also be broken up to the differential plus the calibration factor
         # self.wheelDiff = 106
         self.gauss_result = [0]*8  # readIR result TODO: rename
         self.sensor_values = []
@@ -28,12 +28,7 @@ class Robot():
         self.world_map.start()
 
         # Odometry
-        self.x = 0
-        self.y = 0
-        self.phi = 0.0
-        self.setCounts(0, 0)
-        self.left_l = 0
-        self.right_l = 0
+        self.resetCounts()
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -49,10 +44,7 @@ class Robot():
 
     def run(self):
 
-        self.setCounts(0, 0)
-        self.x = 0
-        self.y = 0
-        self.phi = 0
+        self.resetCounts()
 
         self.state = state.Initial(self)
         self.__class__.state = self.state.name
@@ -67,15 +59,14 @@ class Robot():
         # t = time()
 
         data = self.readCount()
-        if len(data) > 1:
-            # self.setCounts(0, 0)
+        if len(data) == 2:
             left_n = int(data[0])
             right_n = int(data[1])
             left_d = left_n - self.left_l
             self.left_l = left_n
             right_d = right_n - self.right_l
             self.right_l = right_n
-
+            print "L: %f R: %f"%(left_d, right_d)
             self.setOdometry(left_d, right_d)
 
         self.sensor_values = self.readScaledIR()
@@ -208,37 +199,15 @@ class Robot():
         self.serial_connection.readline()
 
     def setOdometry(self,left,right):
-        # print 'LEFT:'+ str(left)
-        # print 'RIGHT:' + str(right)
-        # print 'PHI0:' + str(self.phi)
-        # print '-(left - right)' + str(self.phi - (left-right))
-        # print 'DENOMINATOR:' + str(4*self.wheelDiff)
-        # print 'FIRST:' + str(self.phi)
-        # self.phi = abs(self.phi) % pi
-        # print 'RESULT:' + str(self.phi)
-        # print 'DEGREES:' + str(degrees(self.phi % 2*pi))
-        self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
-        # print self.phi
-        # if newPhi > 6.2831853071795862 or newPhi< 0:
-        #     self.phi = newPhi % (2*pi)
-        #     print self.phi
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
-        print "X: %f Y: %f fi: %f"%(self.x, self.y, degrees(self.phi))
-        
-        #Ensure that phi is between -3.14 and 3.14
-        # if self.phi > pi: #Bigger than 180 deg
-        #     self.phi = (self.phi % pi) + (-pi)
-        # elif self.phi < (-pi): # Less than -180 deg
-        #     self.phi = (self.phi % pi)
-
+        self.phi = self.phi - (left - right) / (4*self.wheelDiff)
+        # print "X: %f Y: %f phi: %f"%(self.x, self.y, degrees(self.phi))
 
     def readCount(self):
-        # t = time()
         self.serial_connection.write("H\n")
         sensorString = self.serial_connection.readline()
         result = sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
-        # print "READCOUNT TAKES: %f"%((time() - t))
         return result
 
     def setLED(self, led, value):
@@ -274,29 +243,25 @@ class Robot():
         self.x = 0
         self.y = 0
         self.left_l = 0
-        self.rigt_l = 0
+        self.right_l = 0
         self.phi = 0
 
     def rot(self):
         self.resetCounts()
         print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-        self.setSpeeds(0,10)
+        self.setSpeeds(-5, 5)
     
-        while self.phi < pi:    
+        while self.phi < 4*pi:    
             data = self.readCount()
             if len(data) == 2:
-                self.setCounts(0, 0)
-                print "L: %f R: %f"%(int(data[0]), int(data[1]))
-                self.setOdometry(int(data[0]), int(data[1]))
-
-                # left_n = int(data[0])
-                # right_n = int(data[1])
-                # left_d = left_n - self.left_l
-                # self.left_l = left_n
-                # right_d = right_n - self.right_l
-                # self.right_l = right_n
-                # print "L: %f R: %f"%(left_d, right_d)
-                # self.setOdometry(left_d, right_d)
+                left_n = int(data[0])
+                right_n = int(data[1])
+                left_d = left_n - self.left_l
+                self.left_l = left_n
+                right_d = right_n - self.right_l
+                self.right_l = right_n
+                print "L: %f R: %f"%(left_d, right_d)
+                self.setOdometry(left_d, right_d)
 
         self.setSpeeds(0,0)
 
@@ -316,7 +281,7 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-
+                print "L: %f R: %f"%(left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
         self.stop()
@@ -335,13 +300,13 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-
+                print "L: %f R: %f"%(left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
         self.stop()
 
     def razhodka(self):
-        self.goTo(1000.0)
+        self.goTo(4000.0)
         self.rotateTo(pi)
-        self.goTo(1000.0)
+        self.goTo(4000.0)
 
