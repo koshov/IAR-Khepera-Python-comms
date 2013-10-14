@@ -74,7 +74,7 @@ class Robot():
                     self.state = event.transition()
                 # print "Transitioned to " + self.state.name
 
-        print "FPS: %f"%(1/(time() - t))
+        # print "FPS: %f"%(1/(time() - t))
         # sleep(self.TIMEOUT)
 
     def calibrateIR (self):
@@ -217,11 +217,11 @@ class Robot():
 
 
     def readCount(self):
-        t = time()
+        # t = time()
         self.serial_connection.write("H\n")
         sensorString = self.serial_connection.readline()
         result = sensorString[:-2].split(",")[1:]  # Drop "\r\n" at the end of string and "n" at beginning
-        print "READCOUNT TAKES: %f"%((time() - t))
+        # print "READCOUNT TAKES: %f"%((time() - t))
         return result
 
     def setLED(self, led, value):

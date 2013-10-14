@@ -44,6 +44,7 @@ def worldMap(pipe):
 
         while True:
             (x, y, phi), sensorValues = pipe.recv()
+            print phi
 
             r_x = x/resolution
             r_y = y/resolution
