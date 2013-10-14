@@ -18,8 +18,8 @@ class Robot():
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
-        # self.wheelDiff = 64.8 # This can also be broken up to the differential plus the calibration factor
-        self.wheelDiff = 53
+        self.wheelDiff = 64.8 # This can also be broken up to the differential plus the calibration factor
+        # self.wheelDiff = 106
         self.gauss_result = [0]*8  # readIR result TODO: rename
         self.sensor_values = []
 
@@ -27,11 +27,13 @@ class Robot():
         self.world_map = Process(target=worldMap, args=(child_pipe, ))
         self.world_map.start()
 
-        #Odometry############
-        self.x = 0     # :* #
-        self.y = 0     ######
-        self.phi = 0.0      #
-        self.setCounts(0, 0)#
+        # Odometry
+        self.x = 0
+        self.y = 0
+        self.phi = 0.0
+        self.setCounts(0, 0)
+        self.left_l = 0
+        self.right_l = 0
 
         shit = self.serial_connection.readline()
         while shit != "":
@@ -66,8 +68,15 @@ class Robot():
 
         data = self.readCount()
         if len(data) > 1:
-            self.setCounts(0, 0)
-            self.setOdometry(int(data[0]),int(data[1]))
+            # self.setCounts(0, 0)
+            left_n = int(data[0])
+            right_n = int(data[1])
+            left_d = left_n - self.left_l
+            self.left_l = left_n
+            right_d = right_n - self.right_l
+            self.right_l = right_n
+
+            self.setOdometry(left_d, right_d)
 
         self.sensor_values = self.readScaledIR()
         self.pipe.send(((self.x, self.y, self.phi), self.sensor_values))
@@ -208,7 +217,6 @@ class Robot():
         # self.phi = abs(self.phi) % pi
         # print 'RESULT:' + str(self.phi)
         # print 'DEGREES:' + str(degrees(self.phi % 2*pi))
-        print "X: %f Y: %f fi: %f"%(self.x, self.y, degrees(self.phi))
         self.phi = self.phi - (left - right) / (4.0 * self.wheelDiff)
         # print self.phi
         # if newPhi > 6.2831853071795862 or newPhi< 0:
@@ -216,6 +224,7 @@ class Robot():
         #     print self.phi
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
+        print "X: %f Y: %f fi: %f"%(self.x, self.y, degrees(self.phi))
         
         #Ensure that phi is between -3.14 and 3.14
         # if self.phi > pi: #Bigger than 180 deg
@@ -260,39 +269,79 @@ class Robot():
         except KeyboardInterrupt, e:
             self.stop()
 
-    def rot(self):
-
+    def resetCounts(self):
         self.setCounts(0, 0)
         self.x = 0
         self.y = 0
+        self.left_l = 0
+        self.rigt_l = 0
         self.phi = 0
 
+    def rot(self):
+        self.resetCounts()
         print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
         self.setSpeeds(0,10)
     
-        while self.phi < 4*pi:    
+        while self.phi < pi:    
             data = self.readCount()
-            if len(data) > 1:
+            if len(data) == 2:
                 self.setCounts(0, 0)
-                self.setOdometry(int(data[0]),int(data[1]))
+                print "L: %f R: %f"%(int(data[0]), int(data[1]))
+                self.setOdometry(int(data[0]), int(data[1]))
+
+                # left_n = int(data[0])
+                # right_n = int(data[1])
+                # left_d = left_n - self.left_l
+                # self.left_l = left_n
+                # right_d = right_n - self.right_l
+                # self.right_l = right_n
+                # print "L: %f R: %f"%(left_d, right_d)
+                # self.setOdometry(left_d, right_d)
 
         self.setSpeeds(0,0)
 
         print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
 
+    def goTo(self, x):
+        self.resetCounts()
 
-    # def measureMapping(self):
-    #     self.setCounts(0, 0)
-    #     data = self.readCount()
-    #     # print "Initial Counts:" + str(data)
-    #     #Start Moving Forward
-    #     self.setSpeeds(1,1)
-    #     sleep(1.25)
-    #     self.setSpeeds(0,0)
-    #     #Stop moving forward and measure wheels
-    #     data = self.readCount()
-    #     if len(data) > 1:
-    #         # print "Final counts are:" + str(data[0])+ ' and ' + str(data[1])
-    #         self.setOdometry(int(data[0]),int(data[1]))
-    #     # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-    #     print 'For 1cm, x= %s'%(self.x)
+        self.go(self.FULL_SPEED)
+
+        while self.x < x:
+            data = self.readCount()
+            if len(data) == 2:
+                left_n = int(data[0])
+                right_n = int(data[1])
+                left_d = left_n - self.left_l
+                self.left_l = left_n
+                right_d = right_n - self.right_l
+                self.right_l = right_n
+
+                self.setOdometry(left_d, right_d)
+
+        self.stop()
+
+    def rotateTo(self, phi):
+        self.resetCounts()
+
+        self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+
+        while self.phi < phi:
+            data = self.readCount()
+            if len(data) == 2:
+                left_n = int(data[0])
+                right_n = int(data[1])
+                left_d = left_n - self.left_l
+                self.left_l = left_n
+                right_d = right_n - self.right_l
+                self.right_l = right_n
+
+                self.setOdometry(left_d, right_d)
+
+        self.stop()
+
+    def razhodka(self):
+        self.goTo(1000.0)
+        self.rotateTo(pi)
+        self.goTo(1000.0)
+
