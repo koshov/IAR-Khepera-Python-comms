@@ -19,10 +19,10 @@ BLUE = (32, 118, 186)
 # draw the white background onto the surface
 windowSurface.fill(BLUE)
 
-# pygame.draw.polygon(windowSurface, GREEN, ((146, 0), (291, 106), (236, 277), (56, 277), (0, 106)))
-# pygame.draw.line(windowSurface, BLUE, (60, 60), (120, 60), 4)
-# pygame.draw.circle(windowSurface, BLUE, (300, 50), 20, 0)
-# pygame.draw.ellipse(windowSurface, RED, (300, 250, 40, 80), 1)
+#pygame.draw.polygon(windowSurface, GREEN, ((146, 0), (291, 106), (236, 277), (56, 277), (0, 106)))
+#pygame.draw.line(windowSurface, BLUE, (60, 60), (120, 60), 4)
+#pygame.draw.circle(windowSurface, BLUE, (300, 50), 20, 0)
+#pygame.draw.ellipse(windowSurface, RED, (300, 250, 40, 80), 1)
 
 
 # get a pixel array of the surface

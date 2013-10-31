@@ -129,7 +129,7 @@ class Robot():
             left = sum(irs[0:2])
             right = sum(irs[3:5])
             #Check which wall is closer
-            if (left>right):
+            if left > right:
                 print 'Left wall is closer'
                 self.robot.setSpeeds(-5,5)
                 self.events = [event.Parallel_completed(robot, [1,0])]
@@ -143,6 +143,13 @@ class Robot():
             self.robot = robot
             robot.stop()
             alpha = atan(robot.y / robot.x)
+
+            if((self.robot.phi - alpha) > pi):
+				destination = pi - robot.phi - alpha
+            else:
+	            destination = robot.phi - alpha - pi
+
+
             destination = pi - (robot.phi % (2*pi)) - alpha
             robot.phi = robot.phi % (2*pi)
             robot.rotateTo(destination)
