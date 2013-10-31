@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6 run.py
+#!/usr/bin/python2.6
 import robot
 
 r = robot.Robot()
