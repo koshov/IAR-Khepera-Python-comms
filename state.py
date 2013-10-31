@@ -14,6 +14,12 @@ class Initial(State):
         self.events = [event.Obsticle(robot)]
         # + self.action.events
 
+class Homing(State):
+    def __init__(self, robot):
+        self.name = "Homing State"
+        self.action = robot.GoHome(robot)
+        self.events = self.action.events + [event.AtHome(robot)]
+
 class Follow_wall(State):
     def __init__(self, robot):
         self.name = "Following Wall"

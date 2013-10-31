@@ -4,7 +4,7 @@ from worldMap import worldMap
 from time import sleep, time, clock
 import state
 import event
-from math import cos, sin, pi, degrees
+from math import cos, sin, pi, degrees, atan
 import cPickle as pickle
 
 
@@ -19,13 +19,14 @@ class Robot():
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
         self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
         self.wheelDiff = 163.8 # This can also be broken up to the differential plus the calibration factor
-        # self.wheelDiff = 106
         self.gauss_result = [0]*8  # readIR result TODO: rename
         self.sensor_values = []
 
         self.pipe, child_pipe = Pipe()
         self.world_map = Process(target=worldMap, args=(child_pipe, ))
         self.world_map.start()
+
+        self.destination_unknown = True
 
         # Odometry
         self.resetCounts()
@@ -43,11 +44,11 @@ class Robot():
 
 
     def run(self):
-
         self.resetCounts()
 
         self.state = state.Initial(self)
         self.__class__.state = self.state.name
+        self.start_time = time()
         try:
             while True:
                 self.thick()
@@ -78,6 +79,12 @@ class Robot():
                 if event.transition() != None:
                     self.state = event.transition()
                 # print "Transitioned to " + self.state.name
+
+        if self.destination_unknown:
+            if time() - self.start_time > 20:
+                self.destination_unknown = False
+                self.state = state.Homing(self)
+           
 
         # print "FPS: %f"%(1/(time() - t))
         # sleep(self.TIMEOUT)
@@ -130,6 +137,16 @@ class Robot():
                 print 'Right wall is closer'
                 self.robot.setSpeeds(5,-5)
                 self.events = [event.Parallel_completed(robot, [4,5])]
+
+    class GoHome(Action):
+        def __init__(self, robot):
+            self.robot = robot
+            robot.stop()
+            alpha = atan(robot.y / robot.x)
+            destination = pi - (robot.phi % (2*pi)) - alpha
+            robot.phi = robot.phi % (2*pi)
+            robot.rotateTo(destination)
+            self.events = []
 
 
 
@@ -212,9 +229,9 @@ class Robot():
 
     def setLED(self, led, value):
         if led == "left":
-            led = 0
+            led = '0'
         else:
-            led = 1
+            led = '1'
         self.serial_connection.write("L,"+led+","+value+"\n")
 
     def monitorIR(self):
@@ -287,11 +304,17 @@ class Robot():
         self.stop()
 
     def rotateTo(self, phi):
-        self.resetCounts()
+        print "Target: %f"%phi
+        print "At %f"%self.phi
+        if phi > 0:
+            self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+        else:
+            self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
 
-        self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+        start_phi = self.phi
 
-        while self.phi < phi:
+        while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
+            print "LAt %f"%self.phi
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])

@@ -1,4 +1,5 @@
 import state
+from time import sleep
 
 
 class Event():
@@ -53,23 +54,26 @@ class Lost_obsticle(Event):
     def transition(self):
         return state.Initial(self.robot)
 
-# class In_corner(Event):
-#     def __init__(self, robot):
-#         self.robot = robot
-#         self.THRESHOLD = 0.2    
+class AtHome(Event):
+    def __init__(self, robot):
+        self.robot = robot   
 
-#     def check(self):
-#         sensor_values = self.robot.sensor_values
-#         if sensor_values is not None:
-#             if (sensor_values[0]+sensor_values[1]/2 > self.THRESHOLD and sensor_values[4]+sensor_values[5]/2 > self.THRESHOLD):
-#                 return True
-#             return False
+    def check(self):
+        if abs(self.robot.x) < 50 and abs(self.robot.y) < 50:
+            return True
+        return False
 
-#     def call(self):
-#         print "In a tight corner"
+    def call(self):
+        self.robot.setLED("left", '1')
+        sleep(1)
+        self.robot.setLED("left", '0')
+        self.robot.setLED("right", '1')
+        sleep(1)
+        self.robot.setLED("right", '0')
 
-#     def transition(self):
-#         return state.Escape_corner(self.robot)
+
+    def transition(self):
+        return state.State(self.robot)
 
 class Distance_changed(Event):
     def __init__(self, robot, wall_position):
