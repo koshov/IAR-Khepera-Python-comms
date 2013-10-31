@@ -19,19 +19,11 @@ BLUE = (32, 118, 186)
 # draw the white background onto the surface
 windowSurface.fill(BLUE)
 
-# draw a green polygon onto the surface
-pygame.draw.polygon(windowSurface, GREEN, ((146, 0), (291, 106), (236, 277), (56, 277), (0, 106)))
+# pygame.draw.polygon(windowSurface, GREEN, ((146, 0), (291, 106), (236, 277), (56, 277), (0, 106)))
+# pygame.draw.line(windowSurface, BLUE, (60, 60), (120, 60), 4)
+# pygame.draw.circle(windowSurface, BLUE, (300, 50), 20, 0)
+# pygame.draw.ellipse(windowSurface, RED, (300, 250, 40, 80), 1)
 
-# draw some blue lines onto the surface
-pygame.draw.line(windowSurface, BLUE, (60, 60), (120, 60), 4)
-pygame.draw.line(windowSurface, BLUE, (120, 60), (60, 120))
-pygame.draw.line(windowSurface, RED, (60, 120), (120, 120), 4)
-
-# draw a blue circle onto the surface
-pygame.draw.circle(windowSurface, BLUE, (300, 50), 20, 0)
-
-# draw a red ellipse onto the surface
-pygame.draw.ellipse(windowSurface, RED, (300, 250, 40, 80), 1)
 
 # get a pixel array of the surface
 pixArray = pygame.PixelArray(windowSurface)
@@ -42,10 +34,15 @@ del pixArray
 
 
 # draw the window onto the screen
-pygame.display.update()
 
 # run the game loop
+i=1
 while True:
+    pygame.draw.circle(windowSurface, RED, (600, 600), i, 0)
+    i += 1
+    pygame.display.update()
+
+
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
