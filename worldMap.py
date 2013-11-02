@@ -9,36 +9,67 @@ def worldMap(pipe):
     pygame.init()
 
     # set up the window
-    windowSurface = pygame.display.set_mode((900, 900), 0, 32)
+    windowSurface = pygame.display.set_mode((880, 580))
     pygame.display.set_caption('Goshko & Nasko rule!')
 
     # set up the colors
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
-    RED = (228, 120, 118)
+    RED = (228, 60, 80)
     ORANGE = (237, 151, 81)
     GREEN = (195, 237, 81)
     BLUE = (32, 118, 186)
 
-    windowSurface.fill(BLUE)
-    world_map = pygame.PixelArray(windowSurface)
+    # windowSurface.fill(BLUE)
+    # world_map = pygame.PixelArray(windowSurface)
+
+    world_map = pygame.image.load('map.bmp').convert() # Speedup image drawing
+    world_map = pygame.transform.scale(world_map, (880, 580))
+    windowSurface.blit(world_map, (0,0))
+    pygame.display.update()
     # == End Pygame setup ==
 
-    resolution = 10.0
-    wall_distance = 200 / resolution
+    resolution = 20.0
+    wall_distance = 615 / resolution
     threshhold = 0.1
-    khepera_angles = [55, 35, 10, 350, 325, 305]
+    khepera_angles = [305, 325, 350, 10, 35, 55] #[55, 35, 10, 350, 325, 305]
     sensor_angles = [radians(x) for x in khepera_angles]
 
-    xs = [0]
-    ys = [0]
-    max_a = 200
-    min_a = -200
-    rescale = False
+
+    # == Robot placement ==
+    mx = 0
+    my = 0
+    placing = True
+    while placing:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pipe.send(True)
+                pygame.quit()
+                sys.exit()
+            elif event.type == MOUSEBUTTONDOWN:
+                mx = event.pos[0]
+                my = event.pos[1]
+                windowSurface.blit(world_map, (0,0))
+                # pygame.draw.line(windowSurface, GREEN, r_pos, r_dir_pos ,2)
+                pygame.draw.circle(windowSurface, BLUE, (mx,my), 20)
+
+                pygame.display.update()
+            elif event.type == MOUSEBUTTONUP:
+                # placing = False
+                mx_l = event.pos[0]
+                my_l = event.pos[1]
+                windowSurface.blit(world_map, (0,0))
+                pygame.draw.line(windowSurface, GREEN, (mx,my), (mx_l,my_l) ,2)
+                pygame.draw.circle(windowSurface, BLUE, (mx,my), 20)
+
+                pygame.display.update()
+
+    # == End Robot placement ==
+
 
     while True:
         (x, y, phi), sensorValues = pipe.recv()
-        phi = -phi
+        phi = -phi  # Revert Y and Phi do the differences in origin
         y = -y
 
         r_x = x/resolution
@@ -49,55 +80,35 @@ def worldMap(pipe):
         obstacle_locations = []
         for i in range(6):
             if sensorValues[i] > threshhold:
-                a = sensor_angles[i]
+                a = temp_angles[i]
                 a_location = ( round(cos(a)*wall_distance + r_x), round(sin(a)*wall_distance + r_y) )
                 obstacle_locations.append( a_location )
 
-        r_x = round(r_x)
-        r_y = round(r_y)
+        left_offset = 0
+        right_offset = 0
 
-        # if r_x > max_a:
-        #     max_a = r_x
-        #     rescale = True
-        # elif r_x < min_a:
-        #     min_a = r_x
-        #     rescale = True
-        # elif r_y > max_a:
-        #     max_a = r_y
-        #     rescale = True
-        # elif r_y < min_a:
-        #     min_a = r_y
-        #     rescale = True
+        r_x = int(round(r_x)) + left_offset
+        r_y = int(round(r_y)) + right_offset
 
-        # if rescale:
-        #     plt.axis([min_a, max_a, min_a, max_a])
-        #     rescale = False
 
-        # robot_location = (r_x, r_y)
-        # world_map[robot_location] = 2
-        # # print "Robot: x-%d y-%d"%(round(r_x), round(r_y))
-        # for location in obstacle_locations:
-        #     world_map[location] = 1
-        #     print "Wall: x- %d y- %d"%(location)
+        r_pos = ( r_x, r_y )
+        r_dir_pos = ( int(cos(phi)*30 + r_x), int(sin(phi)*30 + r_y) )
 
-        # world_map[int(r_x)+200][int(r_y)+200] = GREEN
-        lft = 200
-        rght = 200
-
-        r_pos = ( int(r_x)+lft, int(r_y)+rght )
-        r_dir_pos = ( int(cos(phi)*10 + r_x + lft), int(sin(phi)*10 + r_y + lft) )
-
-        windowSurface.fill(BLUE)
-        robot = pygame.draw.circle(windowSurface, RED, r_pos, 6)
-        direction = pygame.draw.line(windowSurface, RED, r_pos, r_dir_pos ,2)
-
-        for x, y in obstacle_locations:
-            world_map[int(x)+lft][int(y)+rght] = ORANGE
+        # windowSurface.fill(BLUE)
+        windowSurface.blit(world_map, (0,0))
+        pygame.draw.line(windowSurface, GREEN, r_pos, r_dir_pos ,2)
+        pygame.draw.circle(windowSurface, BLUE, r_pos, 20)
 
         pygame.display.update()
+        # for x, y in obstacle_locations:
+        #     if (r_x > 0 and r_x < world_map.get_width() and r_y > 0 and r_y < world_map.get_height()):
+        #         world_map[r_x][r_y] = ORANGE
+
+
 
         for event in pygame.event.get():
             if event.type == QUIT:
+                pipe.send(True)
                 pygame.quit()
                 sys.exit()
 

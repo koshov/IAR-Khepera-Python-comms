@@ -35,7 +35,7 @@ class Robot():
         while shit != "":
             print shit
             shit = self.serial_connection.readline()
-        
+
         try:
             self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
         except IOError:
@@ -71,7 +71,13 @@ class Robot():
             self.setOdometry(left_d, right_d)
 
         self.sensor_values = self.readScaledIR()
+        if self.pipe.poll():
+            child_signal = self.pipe.recv()
+            if child_signal:
+                self.stop()
+                exit()
         self.pipe.send(((self.x, self.y, self.phi), self.sensor_values))
+
 
         for event in self.state.events:
             if event.check():
@@ -84,7 +90,7 @@ class Robot():
             if time() - self.start_time > 20:
                 self.destination_unknown = False
                 self.state = state.Homing(self)
-           
+
 
         # print "FPS: %f"%(1/(time() - t))
         # sleep(self.TIMEOUT)
@@ -106,7 +112,7 @@ class Robot():
     # Actions
     class Action():
         def __init__(self, robot):
-            pass            
+            pass
 
     class Move_forward(Action):
         def __init__(self, robot):
@@ -121,7 +127,7 @@ class Robot():
             self.events = [event.Distance_changed(robot, wall_position)]
             # print 'Adjusting to the wall'
             # self.robot.stop()
-            
+
     class Rotate_to_wall(Action):
         def __init__(self, robot):
             #Now get the sensors.
@@ -133,7 +139,7 @@ class Robot():
                 print 'Left wall is closer'
                 self.robot.setSpeeds(-5,5)
                 self.events = [event.Parallel_completed(robot, [1,0])]
-            else: 
+            else:
                 print 'Right wall is closer'
                 self.robot.setSpeeds(5,-5)
                 self.events = [event.Parallel_completed(robot, [4,5])]
@@ -196,7 +202,7 @@ class Robot():
         self.serial_connection.write("N\n")
         sensorString = self.serial_connection.readline()
         sensorArray = self.validateSensorValue(sensorString)
-        
+
         if sensorArray != None:
             for i, value in enumerate(sensorArray):
                 del self.IRqueue[i][0]
@@ -257,18 +263,18 @@ class Robot():
 
     def resetCounts(self):
         self.setCounts(0, 0)
-        self.x = 0
-        self.y = 0
+        self.x = 17500
+        self.y = -11500
         self.left_l = 0
         self.right_l = 0
-        self.phi = 0
+        self.phi = pi
 
     def rot(self):
         self.resetCounts()
         print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
         self.setSpeeds(-5, 5)
-    
-        while self.phi < 4*pi:    
+
+        while self.phi < 4*pi:
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])
@@ -313,8 +319,8 @@ class Robot():
 
         start_phi = self.phi
 
+        print "Homing"
         while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
-            print "LAt %f"%self.phi
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])
