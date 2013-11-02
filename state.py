@@ -14,6 +14,12 @@ class Initial(State):
         self.events = [event.Obsticle(robot)]
         # + self.action.events
 
+class Moving_To_Target(State):
+    def __init__(self, robot, x, y):
+        self.name = "Going To Set Coordinates"
+        self.action = robot.Go_to(robot, x, y)
+        self.events = [event.Reached_Positon(robot, x, y)]
+
 class Homing(State):
     def __init__(self, robot):
         self.name = "Homing State"

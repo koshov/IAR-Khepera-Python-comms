@@ -12,14 +12,16 @@ class Robot():
     """ Robot class - what else did you expect?! """
 
     def __init__(self):
-        self.serial_connection = serial.Serial(0,9600, timeout=0.1)
+        self.serial_connection = serial.Serial(0, 9600, timeout=0.1)
         self.FULL_SPEED = 5
         self.state = "Initial State"
         self.TIMEOUT = 0.0005
-        self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075, 0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635, 0.24197072451914337, 0.4414418647198597]
-        self.IRqueue = [[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10,[0]*10]
+        self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075,
+                           0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635,
+                           0.24197072451914337, 0.4414418647198597]
+        self.IRqueue = [[0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10]
         self.wheelDiff = 163.8 # This can also be broken up to the differential plus the calibration factor
-        self.gauss_result = [0]*8  # readIR result TODO: rename
+        self.gauss_result = [0] * 8  # readIR result TODO: rename
         self.sensor_values = []
 
         self.pipe, child_pipe = Pipe()
@@ -35,18 +37,19 @@ class Robot():
         while shit != "":
             print shit
             shit = self.serial_connection.readline()
-        
+
         try:
             self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
         except IOError:
             self.min_IR_readings = self.calibrateIR()
 
 
-
     def run(self):
         self.resetCounts()
 
-        self.state = state.Initial(self)
+        #self.state = state.Initial(self)
+        #self.__class__.state = self.state.name
+        self.state = state.Moving_To_Target(self, 300, 300)
         self.__class__.state = self.state.name
         self.start_time = time()
         try:
@@ -67,7 +70,7 @@ class Robot():
             self.left_l = left_n
             right_d = right_n - self.right_l
             self.right_l = right_n
-            print "L: %f R: %f"%(left_d, right_d)
+            print "L: %f R: %f" % (left_d, right_d)
             self.setOdometry(left_d, right_d)
 
         self.sensor_values = self.readScaledIR()
@@ -78,35 +81,50 @@ class Robot():
                 event.call()
                 if event.transition() != None:
                     self.state = event.transition()
-                # print "Transitioned to " + self.state.name
+                    # print "Transitioned to " + self.state.name
 
         if self.destination_unknown:
             if time() - self.start_time > 20:
                 self.destination_unknown = False
                 self.state = state.Homing(self)
-           
 
-        # print "FPS: %f"%(1/(time() - t))
-        # sleep(self.TIMEOUT)
 
-    def calibrateIR (self):
-        historicIR = [[],[],[],[],[],[],[],[]]
+                # print "FPS: %f"%(1/(time() - t))
+                # sleep(self.TIMEOUT)
+
+    def calibrateIR(self):
+        historicIR = [[], [], [], [], [], [], [], []]
         smoothIterations = 100
         for i in range(smoothIterations):
             vals = self.readIR()
             for i in range(8):
                 historicIR[i].append(vals[i])
             sleep(self.TIMEOUT)
-        min_IR_readings = [sum(list)/smoothIterations for list in historicIR]
+        min_IR_readings = [sum(list) / smoothIterations for list in historicIR]
         pickle.dump(min_IR_readings, open("min_IR_readings.p", "wb"))
-        print "Minimum IR levels after calibration:\n%s"%min_IR_readings
+        print "Minimum IR levels after calibration:\n%s" % min_IR_readings
         return min_IR_readings
 
 
     # Actions
     class Action():
         def __init__(self, robot):
-            pass            
+            pass
+
+    class Go_to(Action):
+        def __init__(self, robot, x, y):
+            #self.events = [event.Reached_Positon(robot)]
+            x = float(x)
+            y = float(y)
+            print "Rotating to face goal"
+            angle = atan(y/x)
+            print angle
+            robot.rotateTo(angle)
+            print "Done Rotating, now moving towards goal"
+            robot.resetCounts()
+            robot.phi = angle
+            robot.go(robot.FULL_SPEED)
+
 
     class Move_forward(Action):
         def __init__(self, robot):
@@ -121,7 +139,7 @@ class Robot():
             self.events = [event.Distance_changed(robot, wall_position)]
             # print 'Adjusting to the wall'
             # self.robot.stop()
-            
+
     class Rotate_to_wall(Action):
         def __init__(self, robot):
             #Now get the sensors.
@@ -131,12 +149,12 @@ class Robot():
             #Check which wall is closer
             if left > right:
                 print 'Left wall is closer'
-                self.robot.setSpeeds(-5,5)
-                self.events = [event.Parallel_completed(robot, [1,0])]
-            else: 
+                self.robot.setSpeeds(-5, 5)
+                self.events = [event.Parallel_completed(robot, [1, 0])]
+            else:
                 print 'Right wall is closer'
-                self.robot.setSpeeds(5,-5)
-                self.events = [event.Parallel_completed(robot, [4,5])]
+                self.robot.setSpeeds(5, -5)
+                self.events = [event.Parallel_completed(robot, [4, 5])]
 
     class GoHome(Action):
         def __init__(self, robot):
@@ -144,18 +162,15 @@ class Robot():
             robot.stop()
             alpha = atan(robot.y / robot.x)
 
-            if((self.robot.phi - alpha) > pi):
-				destination = pi - robot.phi - alpha
+            if ((self.robot.phi - alpha) > pi):
+                destination = pi - robot.phi - alpha
             else:
-	            destination = robot.phi - alpha - pi
+                destination = robot.phi - alpha - pi
 
-
-            destination = pi - (robot.phi % (2*pi)) - alpha
-            robot.phi = robot.phi % (2*pi)
+            destination = pi - (robot.phi % (2 * pi)) - alpha
+            robot.phi = robot.phi % (2 * pi)
             robot.rotateTo(destination)
             self.events = []
-
-
 
 
     # Khepera functions
@@ -166,7 +181,7 @@ class Robot():
             print e
 
     def setSpeeds(self, leftSpeed, rightSpeed):
-        self.serial_connection.write("D,"+str(leftSpeed)+","+str(rightSpeed)+"\n")
+        self.serial_connection.write("D," + str(leftSpeed) + "," + str(rightSpeed) + "\n")
         self.serial_connection.readline()
 
     def go(self, speed):
@@ -186,30 +201,31 @@ class Robot():
                 return None
         return result
 
-    def scaleIR(self,value,i):
-        return (value - self.min_IR_readings[i])/(1020 - self.min_IR_readings[i])
+    def scaleIR(self, value, i):
+        return (value - self.min_IR_readings[i]) / (1020 - self.min_IR_readings[i])
 
     """
     This will read the sensors values
     and then scale them down according to the calibration
     """
+
     def readScaledIR(self):
         vals = self.readIR()
-        for i in range(0,len(vals)):
-            vals[i] = self.scaleIR(vals[i],i)
+        for i in range(0, len(vals)):
+            vals[i] = self.scaleIR(vals[i], i)
         return vals
 
     def readIR(self):
         self.serial_connection.write("N\n")
         sensorString = self.serial_connection.readline()
         sensorArray = self.validateSensorValue(sensorString)
-        
+
         if sensorArray != None:
             for i, value in enumerate(sensorArray):
                 del self.IRqueue[i][0]
                 self.IRqueue[i].append(int(value))
-                self.gauss_result[i] = sum([a*b for a,b in zip(self.IRqueue[i],self.gaussArray)])
-        # print sensorArray
+                self.gauss_result[i] = sum([a * b for a, b in zip(self.IRqueue[i], self.gaussArray)])
+            # print sensorArray
         # print result
         return self.gauss_result
 
@@ -219,13 +235,13 @@ class Robot():
         return self.validateSensorValue(sensorString)
 
     def setCounts(self, leftCount, rightCount):
-        self.serial_connection.write("G,"+str(leftCount)+","+str(rightCount)+"\n")
+        self.serial_connection.write("G," + str(leftCount) + "," + str(rightCount) + "\n")
         self.serial_connection.readline()
 
-    def setOdometry(self,left,right):
+    def setOdometry(self, left, right):
         self.x = self.x + 0.5 * (left + right) * cos(self.phi)
         self.y = self.y + 0.5 * (left + right) * sin(self.phi)
-        self.phi = self.phi - (left - right) / (4*self.wheelDiff)
+        self.phi = self.phi - (left - right) / (4 * self.wheelDiff)
         # print "X: %f Y: %f phi: %f"%(self.x, self.y, degrees(self.phi))
 
     def readCount(self):
@@ -239,7 +255,7 @@ class Robot():
             led = '0'
         else:
             led = '1'
-        self.serial_connection.write("L,"+led+","+value+"\n")
+        self.serial_connection.write("L," + led + "," + value + "\n")
 
     def monitorIR(self):
         while True:
@@ -272,10 +288,10 @@ class Robot():
 
     def rot(self):
         self.resetCounts()
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        print "x: %s \ny: %s \nphi: %s  " % (self.x, self.y, (self.phi))
         self.setSpeeds(-5, 5)
-    
-        while self.phi < 4*pi:    
+
+        while self.phi < 4 * pi:
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])
@@ -284,12 +300,12 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
+                print "L: %f R: %f" % (left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
-        self.setSpeeds(0,0)
+        self.setSpeeds(0, 0)
 
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        print "x: %s \ny: %s \nphi: %s  " % (self.x, self.y, (self.phi))
 
     def goTo(self, x):
         self.resetCounts()
@@ -305,23 +321,23 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
+                print "L: %f R: %f" % (left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
         self.stop()
 
     def rotateTo(self, phi):
-        print "Target: %f"%phi
-        print "At %f"%self.phi
+        print "Target: %f" % phi
+        print "At %f" % self.phi
         if phi > 0:
-            self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+            self.setSpeeds(-3, 3)
         else:
-            self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
+            self.setSpeeds(3, -3)
 
         start_phi = self.phi
 
-        while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
-            print "LAt %f"%self.phi
+        while (phi > 0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
+            print "LAt %f" % self.phi
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])
@@ -330,13 +346,65 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
+                print "L: %f R: %f" % (left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
         self.stop()
+
+    def measureMapping(self):
+        self.setCounts(0, 0)
+        data = self.readCount()
+        # print "Initial Counts:" + str(data)
+        #Start Moving Forward
+        self.setSpeeds(5,5)
+        sleep(2.5)
+        #12.5s with speed 5,5 = 5cm
+        self.setSpeeds(0,0)
+        #Stop moving forward and measure wheels
+        data = self.readCount()
+        if len(data) > 1:
+            # print "Final counts are:" + str(data[0])+ ' and ' + str(data[1])
+            self.setOdometry(int(data[0]),int(data[1]))
+        # print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
+        print 'For 5cm, x= %s'%(self.x)
+        print 'For 1cm, x= %s'%(self.x/10)
+
+
 
     def razhodka(self):
         self.goTo(4000.0)
         self.rotateTo(pi)
         self.goTo(4000.0)
 
+    def test(self, x, y):
+            x = float(x)
+            y = float(y)
+            print "Rotating to face goal"
+            angle = atan(y/x)
+            print angle
+            self.rotateTo(angle)
+            print "Done Rotating, now moving towards goal"
+            self.resetCounts()
+            self.phi = angle
+            self.go(self.FULL_SPEED)
+
+            while (abs(self.x) <= abs(x)) and (abs(self.y) <= abs(y)):  # 20^2 odometry units
+                #goal_x = (self.x - x)
+                #goal_y = (self.y - y)
+                #print 'Goal_X: %f, self_x: %f, coordinate_x: %f' % (goal_x, self.x, x)
+                #print 'Goal_Y: %f, self_y: %f, coordinate_y: %f' % (goal_y, self.y, y)
+                #print 'Eq is : %f < 400' % (goal_x**2 + goal_y**2)
+                data = self.readCount()
+                if len(data) == 2:
+                    left_n = int(data[0])
+                    right_n = int(data[1])
+                    left_d = left_n - self.left_l
+                    self.left_l = left_n
+                    right_d = right_n - self.right_l
+                    self.right_l = right_n
+                    print "L: %f R: %f" % (self.x, self.y)
+                    self.setOdometry(left_d, right_d)
+            self.stop()
+            print "Reached Goal"
+            print "Robot is at Coordinates: %f, %f" % (self.x, self.y)
+            print 'Facing angle %s ' % degrees(self.phi)

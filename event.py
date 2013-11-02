@@ -75,6 +75,36 @@ class AtHome(Event):
     def transition(self):
         return state.State(self.robot)
 
+
+class Reached_Positon(Event):
+    def __init__(self, robot, x, y):
+        self.robot = robot
+        self.x = x
+        self.y = y
+
+    def check(self):
+        return not((abs(self.robot.x) <= abs(self.x)) and (abs(self.robot.y) <= abs(self.y)))
+
+    def call(self):
+        self.robot.stop()
+
+
+class SpottedFood(Event):
+    def __init__(self, robot):
+        self.robot = robot
+
+    def check(self):
+        sensor_values = self.robot.readScaledIR()
+        return any(sensor > 0.7 for sensor in sensor_values)
+
+    def call(self):
+        self.robot.setLED("left", '1')
+        sleep(1)
+        self.robot.setLED("left", '0')
+        self.robot.setLED("right", '1')
+        sleep(1)
+        self.robot.setLED("right", '0')
+
 class Distance_changed(Event):
     def __init__(self, robot, wall_position):
         self.robot = robot
