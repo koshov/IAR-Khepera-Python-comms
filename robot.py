@@ -7,6 +7,8 @@ import event
 from math import cos, sin, pi, degrees, atan
 import cPickle as pickle
 
+import service_functions
+
 
 class Robot():
     """ Robot class - what else did you expect?! """
@@ -26,9 +28,6 @@ class Robot():
         self.world_map = Process(target=worldMap, args=(child_pipe, ))
         self.world_map.start()
 
-        self.destination_unknown = True
-
-        # Odometry
         self.resetCounts()
 
         shit = self.serial_connection.readline()
@@ -39,8 +38,7 @@ class Robot():
         try:
             self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
         except IOError:
-            self.min_IR_readings = self.calibrateIR()
-
+            self.min_IR_readings = service_functions.calibrateIR()
 
 
     def run(self):
@@ -84,32 +82,11 @@ class Robot():
                 event.call()
                 if event.transition() != None:
                     self.state = event.transition()
-                # print "Transitioned to " + self.state.name
-
-        if self.destination_unknown:
-            if time() - self.start_time > 20:
-                self.destination_unknown = False
-                self.state = state.Homing(self)
-
 
         # print "FPS: %f"%(1/(time() - t))
         # sleep(self.TIMEOUT)
 
-    def calibrateIR (self):
-        historicIR = [[],[],[],[],[],[],[],[]]
-        smoothIterations = 100
-        for i in range(smoothIterations):
-            vals = self.readIR()
-            for i in range(8):
-                historicIR[i].append(vals[i])
-            sleep(self.TIMEOUT)
-        min_IR_readings = [sum(list)/smoothIterations for list in historicIR]
-        pickle.dump(min_IR_readings, open("min_IR_readings.p", "wb"))
-        print "Minimum IR levels after calibration:\n%s"%min_IR_readings
-        return min_IR_readings
-
-
-    # Actions
+    # ==== Actions ====
     class Action():
         def __init__(self, robot):
             pass
@@ -161,10 +138,53 @@ class Robot():
             robot.rotateTo(destination)
             self.events = []
 
+    # ==== Helper Actions ====
+    def goTo(self, x):
+        self.resetCounts()
+
+        self.go(self.FULL_SPEED)
+
+        while self.x < x:
+            data = self.readCount()
+            if len(data) == 2:
+                left_n = int(data[0])
+                right_n = int(data[1])
+                left_d = left_n - self.left_l
+                self.left_l = left_n
+                right_d = right_n - self.right_l
+                self.right_l = right_n
+                print "L: %f R: %f"%(left_d, right_d)
+                self.setOdometry(left_d, right_d)
+
+        self.stop()
+
+    def rotateTo(self, phi):
+        print "Target: %f"%phi
+        print "At %f"%self.phi
+        if phi > 0:
+            self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+        else:
+            self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
+
+        start_phi = self.phi
+
+        print "Homing"
+        while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
+            data = self.readCount()
+            if len(data) == 2:
+                left_n = int(data[0])
+                right_n = int(data[1])
+                left_d = left_n - self.left_l
+                self.left_l = left_n
+                right_d = right_n - self.right_l
+                self.right_l = right_n
+                print "L: %f R: %f"%(left_d, right_d)
+                self.setOdometry(left_d, right_d)
+
+        self.stop()
 
 
-
-    # Khepera functions
+    # ==== Khepera Functions ====
     def closeConnection(self):
         try:
             self.serial_connection.close()
@@ -257,17 +277,6 @@ class Robot():
             print self.readAmbient()
             sleep(self.TIMEOUT)
 
-
-    def hump(self):
-        try:
-            while True:
-                self.go(100)
-                sleep(0.3)
-                self.go(-100)
-                sleep(0.3)
-        except KeyboardInterrupt, e:
-            self.stop()
-
     def resetCounts(self):
         self.setCounts(0, 0)
         self.x = 17500
@@ -275,74 +284,3 @@ class Robot():
         self.left_l = 0
         self.right_l = 0
         self.phi = pi
-
-    def rot(self):
-        self.resetCounts()
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-        self.setSpeeds(-5, 5)
-
-        while self.phi < 4*pi:
-            data = self.readCount()
-            if len(data) == 2:
-                left_n = int(data[0])
-                right_n = int(data[1])
-                left_d = left_n - self.left_l
-                self.left_l = left_n
-                right_d = right_n - self.right_l
-                self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
-                self.setOdometry(left_d, right_d)
-
-        self.setSpeeds(0,0)
-
-        print "x: %s \ny: %s \nphi: %s  "%(self.x, self.y, (self.phi))
-
-    def goTo(self, x):
-        self.resetCounts()
-
-        self.go(self.FULL_SPEED)
-
-        while self.x < x:
-            data = self.readCount()
-            if len(data) == 2:
-                left_n = int(data[0])
-                right_n = int(data[1])
-                left_d = left_n - self.left_l
-                self.left_l = left_n
-                right_d = right_n - self.right_l
-                self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
-                self.setOdometry(left_d, right_d)
-
-        self.stop()
-
-    def rotateTo(self, phi):
-        print "Target: %f"%phi
-        print "At %f"%self.phi
-        if phi > 0:
-            self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
-        else:
-            self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
-
-        start_phi = self.phi
-
-        print "Homing"
-        while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
-            data = self.readCount()
-            if len(data) == 2:
-                left_n = int(data[0])
-                right_n = int(data[1])
-                left_d = left_n - self.left_l
-                self.left_l = left_n
-                right_d = right_n - self.right_l
-                self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
-                self.setOdometry(left_d, right_d)
-
-        self.stop()
-
-    def razhodka(self):
-        self.goTo(4000.0)
-        self.rotateTo(pi)
-        self.goTo(4000.0)
-
