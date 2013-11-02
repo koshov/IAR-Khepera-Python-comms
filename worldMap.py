@@ -1,10 +1,9 @@
-from math import radians, sin, cos
+from math import radians, sin, cos, atan2
 import pygame, sys
 from pygame.locals import *
 
 
 def worldMap(pipe):
-
     # == Pygame setup ==
     pygame.init()
 
@@ -20,7 +19,9 @@ def worldMap(pipe):
     GREEN = (195, 237, 81)
     BLUE = (32, 118, 186)
 
-    # windowSurface.fill(BLUE)
+    ROBOT_RADIUS = 20
+    ROBOT_DIR_LENGTH = 30
+
     # world_map = pygame.PixelArray(windowSurface)
 
     world_map = pygame.image.load('map.bmp').convert() # Speedup image drawing
@@ -29,16 +30,17 @@ def worldMap(pipe):
     pygame.display.update()
     # == End Pygame setup ==
 
+    # == Downscaling and sensors ==
     resolution = 20.0
     wall_distance = 615 / resolution
     threshhold = 0.1
     khepera_angles = [305, 325, 350, 10, 35, 55] #[55, 35, 10, 350, 325, 305]
     sensor_angles = [radians(x) for x in khepera_angles]
-
+    # == End Downscaling and sensors ==
 
     # == Robot placement ==
-    mx = 0
-    my = 0
+    r_x = 0
+    r_y = 0
     placing = True
     while placing:
         for event in pygame.event.get():
@@ -47,21 +49,23 @@ def worldMap(pipe):
                 pygame.quit()
                 sys.exit()
             elif event.type == MOUSEBUTTONDOWN:
-                mx = event.pos[0]
-                my = event.pos[1]
+                r_x = event.pos[0]
+                r_y = event.pos[1]
                 windowSurface.blit(world_map, (0,0))
-                # pygame.draw.line(windowSurface, GREEN, r_pos, r_dir_pos ,2)
-                pygame.draw.circle(windowSurface, BLUE, (mx,my), 20)
-
+                pygame.draw.circle(windowSurface, BLUE, (r_x,r_y), ROBOT_RADIUS)
                 pygame.display.update()
             elif event.type == MOUSEBUTTONUP:
-                # placing = False
-                mx_l = event.pos[0]
-                my_l = event.pos[1]
-                windowSurface.blit(world_map, (0,0))
-                pygame.draw.line(windowSurface, GREEN, (mx,my), (mx_l,my_l) ,2)
-                pygame.draw.circle(windowSurface, BLUE, (mx,my), 20)
+                placing = False
+                x = event.pos[0]
+                y = event.pos[1]
+                phi = atan2(y-r_y, x-r_x)
+                pipe.send({'x': r_x*resolution, 'y': -r_y*resolution, 'phi': -phi})
 
+                r_dir_pos = ( int(cos(phi)*ROBOT_DIR_LENGTH + r_x), int(sin(phi)*ROBOT_DIR_LENGTH + r_y) )
+
+                windowSurface.blit(world_map, (0,0))
+                pygame.draw.line(windowSurface, GREEN, (r_x,r_y), r_dir_pos, 4)
+                pygame.draw.circle(windowSurface, BLUE, (r_x,r_y), ROBOT_RADIUS)
                 pygame.display.update()
 
     # == End Robot placement ==
@@ -69,7 +73,7 @@ def worldMap(pipe):
 
     while True:
         (x, y, phi), sensorValues = pipe.recv()
-        phi = -phi  # Revert Y and Phi do the differences in origin
+        phi = -phi  # Revert Y and Phi due the differences in origin
         y = -y
 
         r_x = x/resolution
@@ -92,12 +96,12 @@ def worldMap(pipe):
 
 
         r_pos = ( r_x, r_y )
-        r_dir_pos = ( int(cos(phi)*30 + r_x), int(sin(phi)*30 + r_y) )
+        r_dir_pos = ( int(cos(phi)*ROBOT_DIR_LENGTH + r_x), int(sin(phi)*ROBOT_DIR_LENGTH + r_y) )
 
         # windowSurface.fill(BLUE)
         windowSurface.blit(world_map, (0,0))
-        pygame.draw.line(windowSurface, GREEN, r_pos, r_dir_pos ,2)
-        pygame.draw.circle(windowSurface, BLUE, r_pos, 20)
+        pygame.draw.line(windowSurface, GREEN, r_pos, r_dir_pos, 4)
+        pygame.draw.circle(windowSurface, BLUE, r_pos, ROBOT_RADIUS)
 
         pygame.display.update()
         # for x, y in obstacle_locations:

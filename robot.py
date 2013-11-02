@@ -1,12 +1,12 @@
 import serial
 from multiprocessing import Process, Pipe
-from worldMap import worldMap
+from math import cos, sin, pi, degrees, atan2
+import cPickle as pickle
 from time import sleep, time, clock
+
 import state
 import event
-from math import cos, sin, pi, degrees, atan
-import cPickle as pickle
-
+from worldMap import worldMap
 import service_functions
 
 
@@ -15,12 +15,24 @@ class Robot():
 
     def __init__(self):
         self.serial_connection = serial.Serial(0, 9600, timeout=0.1)
+        serial_info = self.serial_connection.readline()
+        while serial_info != "":
+            print serial_info
+            serial_info = self.serial_connection.readline()
+        try:
+            self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
+        except IOError:
+            self.min_IR_readings = service_functions.calibrateIR()
+
         self.FULL_SPEED = 5
         self.state = "Initial State"
         self.TIMEOUT = 0.0005
-        self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05, 0.00020074533864, 0.0044318484119380075,
-                           0.02699548325659403, 0.03142733166853204, 0.05399096651318806, 0.19947114020071635,
-                           0.24197072451914337, 0.4414418647198597]
+        self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05,
+                           0.00020074533864,       0.0044318484119380075,
+                           0.02699548325659403,    0.03142733166853204,
+                           0.05399096651318806,    0.19947114020071635,
+                           0.24197072451914337,    0.4414418647198597
+                          ]
         self.IRqueue = [[0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10, [0] * 10]
         self.wheelDiff = 163.8 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0] * 8  # readIR result TODO: rename
@@ -31,24 +43,20 @@ class Robot():
         self.world_map.start()
 
         self.resetCounts()
+        child_signal = self.pipe.recv()
+        if child_signal == True:
+            self.stop()
+            exit()
+        else:
+            self.x = child_signal['x']
+            self.y = child_signal['y']
+            self.phi = child_signal['phi']
 
-        shit = self.serial_connection.readline()
-        while shit != "":
-            print shit
-            shit = self.serial_connection.readline()
-
-        try:
-            self.min_IR_readings = pickle.load(open("min_IR_readings.p", "rb"))
-        except IOError:
-            self.min_IR_readings = service_functions.calibrateIR()
 
     def run(self):
-        self.resetCounts()
-
-        #self.state = state.Initial(self)
-        #self.__class__.state = self.state.name
-        self.state = state.Moving_To_Target(self, 300, 300)
-        self.__class__.state = self.state.name
+        self.state = state.Initial(self)
+        # self.__class__.state = self.state.name
+        # self.state = state.Moving_To_Target(self, 300, 300)
         self.start_time = time()
         try:
             while True:
@@ -68,7 +76,7 @@ class Robot():
             self.left_l = left_n
             right_d = right_n - self.right_l
             self.right_l = right_n
-            print "L: %f R: %f" % (left_d, right_d)
+            # print "L: %f R: %f" % (left_d, right_d)
             self.setOdometry(left_d, right_d)
 
         self.sensor_values = self.readScaledIR()
@@ -111,10 +119,11 @@ class Robot():
     class Go_to(Action):
         def __init__(self, robot, x, y):
             #self.events = [event.Reached_Positon(robot)]
-            x = float(x)
-            y = float(y)
+            # x = float(x)
+            # y = float(y)
             print "Rotating to face goal"
-            angle = atan(y/x)
+            # angle = atan(y/x)
+            angle = atan2(y, x)
             print angle
             robot.rotateTo(angle)
             print "Done Rotating, now moving towards goal"

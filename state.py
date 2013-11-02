@@ -48,15 +48,13 @@ class Follow_wall(State):
 #         self.action = robot.Leave_wall_behind(robot, )
 #         self.events = self.action.events + [event.Lost_obsticle(robot), event.Tight_corner(robot)]
 
-
-#This wil make the robot parallel to a wall
 class Parallel_to_wall(State):
     def __init(self,robot):
         self.name = "Parallel to wall"
         self.action = robot.Rotate_to_wall(robot)
         self.events = robot.Rotate_to_wall.events
 
-class Correct_position(State):  
+class Correct_position(State):
     pass
 
 class Evade_obstacle(State):
