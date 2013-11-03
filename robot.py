@@ -43,14 +43,14 @@ class Robot():
         self.world_map.start()
 
         self.resetCounts()
-        child_signal = self.pipe.recv()
-        if child_signal == True:
+        child_signal, signal_object = self.pipe.recv()
+        if child_signal == 'END':
             self.stop()
             exit()
-        else:
-            self.x = child_signal['x']
-            self.y = child_signal['y']
-            self.phi = child_signal['phi']
+        elif child_signal == 'LOCATION':
+            self.x = signal_object['x']
+            self.y = signal_object['y']
+            self.phi = signal_object['phi']
 
 
     def run(self):
@@ -81,10 +81,12 @@ class Robot():
 
         self.sensor_values = self.readScaledIR()
         if self.pipe.poll():
-            child_signal = self.pipe.recv()
-            if child_signal:
+            child_signal, signal_object = self.pipe.recv()
+            if child_signal == 'END':
                 self.stop()
                 exit()
+            elif child_signal == 'PATH':
+                print signal_object
         self.pipe.send(((self.x, self.y, self.phi), self.sensor_values))
 
 

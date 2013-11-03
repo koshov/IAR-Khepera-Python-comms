@@ -1,4 +1,4 @@
-
+from math import sqrt
 
 # Version 1.1
 #
@@ -149,23 +149,22 @@ class SQ_MapHandler:
         result = []
 
         cl = curnode.location
-        dl = dest
 
-        n = self._handleNode(cl.x+1,cl.y,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x+1, cl.y, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x-1,cl.y,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x-1, cl.y, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x,cl.y+1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x, cl.y+1, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x,cl.y-1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x, cl.y-1, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x+1,cl.y+1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x+1, cl.y+1, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x-1,cl.y-1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x-1, cl.y-1, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x-1,cl.y+1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x-1, cl.y+1, curnode, dest.x, dest.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x+1,cl.y-1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x+1, cl.y-1, curnode, dest.x, dest.y)
         if n: result.append(n)
 
         return result
@@ -175,7 +174,8 @@ class SQ_MapHandler:
         if n is not None:
             dx = max(x,destx) - min(x,destx)
             dy = max(y,desty) - min(y,desty)
-            emCost = dx+dy
+            # emCost = dx+dy
+            emCost = sqrt(dx**2 + dy**2)
             n.mCost += fromnode.mCost
             n.score = n.mCost+emCost
             n.parent=fromnode
