@@ -65,7 +65,7 @@ def worldMap(pipe):
     while placing:
         for event in pygame.event.get():
             if event.type == QUIT:
-                pipe.send(True)
+                pipe.send(('END', None))
                 pygame.quit()
                 sys.exit()
             elif event.type == MOUSEBUTTONDOWN:
@@ -79,7 +79,7 @@ def worldMap(pipe):
                 x = event.pos[0]
                 y = event.pos[1]
                 phi = atan2(y-r_y, x-r_x)
-                pipe.send({'x': r_x*resolution, 'y': -r_y*resolution, 'phi': -phi})
+                pipe.send(('LOCATION', {'x': r_x*resolution, 'y': -r_y*resolution, 'phi': -phi}))
 
                 r_dir_pos = ( int(cos(phi)*ROBOT_DIR_LENGTH + r_x), int(sin(phi)*ROBOT_DIR_LENGTH + r_y) )
 
@@ -148,7 +148,7 @@ def worldMap(pipe):
 
         for event in pygame.event.get():
             if event.type == QUIT:
-                pipe.send(True)
+                pipe.send(('END', None))
                 pygame.quit()
                 sys.exit()
             elif event.type == MOUSEBUTTONDOWN:
@@ -159,8 +159,10 @@ def worldMap(pipe):
                 del pixelArray
                 targetVal = colorVal / 8000000
                 if targetVal == 2:
-                    print "Fine"
                     pathlines = findPath(startPoint, endPoint)
+                    res = int(resolution)
+                    if len(pathlines):
+                        pipe.send(('PATH', [(x*res, y*res) for x, y in pathlines][1:]))
 
                 hasTarget = True
                 target_pos = [pos*10 + 5 for pos in endPoint]
