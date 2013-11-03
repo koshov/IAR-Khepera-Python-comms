@@ -96,8 +96,9 @@ class Reached_Positon(Event):
 
     def check(self):
          # Check if the current robot coordinates are the ones we expect
-
-        print 'angle is %f' %self.robot.phi
+        # print 'Goal at: (%f, %f) we are at: (%f, %f)' % (self.x,self.y,self.robot.x,self.robot.y)
+        print 'Phi: %f, Target: %f'%(self.robot.phi, self.robot.target_angle)
+        # print 'angle is %f' %self.robot.phi
         if self.robot.phi > self.robot.target_angle:
             self.robot.setSpeeds(5, 4)
         elif self.robot.phi < self.robot.target_angle:
@@ -117,12 +118,10 @@ class Reached_Positon(Event):
             y_reached = abs(self.bounding_y) < self.robot.y
 
         if x_reached or y_reached:
-            print 'recursing'
-            self.robot.Go_to(self.robot, self.x, self.y)
-            #return False
+            return True
         #return not((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200))
         #print 'stop'
-        return (abs(self.robot.x) - abs(self.x))**2 + (abs(self.robot.y) - abs(self.y))**2 < 20**2
+        return (abs(self.robot.x) - abs(self.x))**2 + (abs(self.robot.y) - abs(self.y))**2 < 200**2
             #if ((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200)):
             ##Check if the current robot coordinates are the ones we expect
             #if(self.robot.x < abs(self.x) + 50) or (self.robot.x > self.x+50)

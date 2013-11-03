@@ -24,7 +24,9 @@ class Follow_Path(State):
         self.setAction()
 
      def nextWaypoint(self):
-         self.i += self.i
+         self.i += 1
+         if self.i <= len(self.pointsArray):
+             self.setAction()
 
      def setAction(self):
          (x, y) = self.pointsArray[self.i]

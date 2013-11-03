@@ -162,7 +162,7 @@ def worldMap(pipe):
                     pathlines = findPath(startPoint, endPoint)
                     res = int(resolution)
                     if len(pathlines):
-                        pipe.send(('PATH', [(x*res, y*res) for x, y in pathlines][1:]))
+                        pipe.send(('PATH', [(x*res, -y*res) for x, y in pathlines][1:]))
 
                 hasTarget = True
                 target_pos = [pos*10 + 5 for pos in endPoint]

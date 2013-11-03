@@ -25,7 +25,6 @@ class Robot():
             self.min_IR_readings = service_functions.calibrateIR()
 
         self.FULL_SPEED = 5
-        self.state = "Initial State"
         self.TIMEOUT = 0.0005
         self.gaussArray = [1.4867195147342977e-06, 6.691511288e-05,
                            0.00020074533864,       0.0044318484119380075,
@@ -54,9 +53,9 @@ class Robot():
 
 
     def run(self):
-        #self.state = state.Initial(self)
+        self.state = state.State(self)
         # self.__class__.state = self.state.name
-        self.state = state.Moving_To_Target(self, 50, 50)
+        # self.state = state.Moving_To_Target(self, 50, 50)
         self.start_time = time()
         try:
             while True:
@@ -86,9 +85,8 @@ class Robot():
                 self.stop()
                 exit()
             elif child_signal == 'PATH':
-                print signal_object
+                self.state = state.Follow_Path(self, signal_object)
         self.pipe.send(((self.x, self.y, self.phi), self.sensor_values))
-
 
         for event in self.state.events:
             if event.check():
@@ -126,7 +124,7 @@ class Robot():
             robot.rotateTo(robot.target_angle)
             print "Done Rotating, now moving towards goal"
             temp = robot.phi
-            robot.resetCounts()
+            # robot.resetCounts()
             robot.phi = temp
 
     class Follow_Path(Action):
@@ -165,40 +163,40 @@ class Robot():
                 self.robot.setSpeeds(5, -5)
                 self.events = [event.Parallel_completed(robot, [4, 5])]
 
-    class GoHome(Action):
-        def __init__(self, robot):
-            self.robot = robot
-            robot.stop()
-            alpha = atan(robot.y / robot.x)
+    # class GoHome(Action):
+    #     def __init__(self, robot):
+    #         self.robot = robot
+    #         robot.stop()
+    #         alpha = atan(robot.y / robot.x)
 
-            if ((self.robot.phi - alpha) > pi):
-                destination = pi - robot.phi - alpha
-            else:
-                destination = robot.phi - alpha - pi
+    #         if ((self.robot.phi - alpha) > pi):
+    #             destination = pi - robot.phi - alpha
+    #         else:
+    #             destination = robot.phi - alpha - pi
 
-            destination = pi - (robot.phi % (2 * pi)) - alpha
-            robot.phi = robot.phi % (2 * pi)
-            robot.rotateTo(destination)
-            self.events = []
+    #         destination = pi - (robot.phi % (2 * pi)) - alpha
+    #         robot.phi = robot.phi % (2 * pi)
+    #         robot.rotateTo(destination)
+    #         self.events = []
 
     # ==== Helper Actions ====
-    def goTo(self, x):
-        self.resetCounts()
+    # def goTo(self, x):
+    #     self.resetCounts()
 
-        self.go(self.FULL_SPEED)
-        while self.x < x:
-            data = self.readCount()
-            if len(data) == 2:
-                left_n = int(data[0])
-                right_n = int(data[1])
-                left_d = left_n - self.left_l
-                self.left_l = left_n
-                right_d = right_n - self.right_l
-                self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
-                self.setOdometry(left_d, right_d)
+    #     self.go(self.FULL_SPEED)
+    #     while self.x < x:
+    #         data = self.readCount()
+    #         if len(data) == 2:
+    #             left_n = int(data[0])
+    #             right_n = int(data[1])
+    #             left_d = left_n - self.left_l
+    #             self.left_l = left_n
+    #             right_d = right_n - self.right_l
+    #             self.right_l = right_n
+    #             print "L: %f R: %f"%(left_d, right_d)
+    #             self.setOdometry(left_d, right_d)
 
-        self.stop()
+    #     self.stop()
 
     def rotateTo(self, phi):
         print "Target: %f"%phi
@@ -210,7 +208,6 @@ class Robot():
 
         start_phi = self.phi
 
-        print "Homing"
         while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
             data = self.readCount()
             if len(data) == 2:
@@ -220,7 +217,7 @@ class Robot():
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-                print "L: %f R: %f"%(left_d, right_d)
+                # print "L: %f R: %f"%(left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
         self.stop()
