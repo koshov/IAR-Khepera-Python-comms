@@ -81,13 +81,58 @@ class Reached_Positon(Event):
         self.robot = robot
         self.x = x
         self.y = y
+        if self.x < self.robot.x:
+            self.param_x = -123
+        else:
+            self.param_x = 123
+
+        if self.y < self.robot.y:
+            self.param_y = -123
+        else:
+            self.param_y = 123
+
+        self.bounding_x = self.x + self.param_x
+        self.bounding_y = self.y + self.param_y
 
     def check(self):
-        return not((abs(self.robot.x) <= abs(self.x)) and (abs(self.robot.y) <= abs(self.y)))
+         # Check if the current robot coordinates are the ones we expect
+
+        print 'angle is %f' %self.robot.phi
+        if self.robot.phi > self.robot.target_angle:
+            self.robot.setSpeeds(5, 4)
+        elif self.robot.phi < self.robot.target_angle:
+            self.robot.setSpeeds(4, 5)
+        else:
+            self.robot.setSpeeds(5, 5)
+
+
+        if self.param_x < 0:
+            x_reached = abs(self.bounding_x) > self.robot.x
+        else:
+            x_reached = abs(self.bounding_x) < self.robot.x
+
+        if self.param_y < 0:
+            y_reached = abs(self.bounding_y) > self.robot.y
+        else:
+            y_reached = abs(self.bounding_y) < self.robot.y
+
+        if x_reached or y_reached:
+            print 'recursing'
+            self.robot.Go_to(self.robot, self.x, self.y)
+            #return False
+        #return not((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200))
+        print 'stop'
+        return (abs(self.robot.x) - abs(self.x))**2 + (abs(self.robot.y) - abs(self.y))**2 < 20**2
+            #if ((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200)):
+            ##Check if the current robot coordinates are the ones we expect
+            #if(self.robot.x < abs(self.x) + 50) or (self.robot.x > self.x+50)
 
     def call(self):
         self.robot.stop()
+        print "Reached position %f %f" %(self.robot.x, self.robot.y)
 
+    def transition(self):
+        return state.Initial(self.robot)
 
 class SpottedFood(Event):
     def __init__(self, robot):

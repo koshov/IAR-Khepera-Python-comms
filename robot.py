@@ -37,7 +37,7 @@ class Robot():
         self.wheelDiff = 163.8 # This can also be broken up to the differential plus the calibration factor
         self.gauss_result = [0] * 8  # readIR result TODO: rename
         self.sensor_values = []
-
+        self.target_angle = 0.0
         self.pipe, child_pipe = Pipe()
         self.world_map = Process(target=worldMap, args=(child_pipe, ))
         self.world_map.start()
@@ -54,9 +54,9 @@ class Robot():
 
 
     def run(self):
-        self.state = state.Initial(self)
+        #self.state = state.Initial(self)
         # self.__class__.state = self.state.name
-        # self.state = state.Moving_To_Target(self, 300, 300)
+        self.state = state.Moving_To_Target(self, 50, 50)
         self.start_time = time()
         try:
             while True:
@@ -118,18 +118,17 @@ class Robot():
 
     class Go_to(Action):
         def __init__(self, robot, x, y):
-            #self.events = [event.Reached_Positon(robot)]
-            # x = float(x)
-            # y = float(y)
             print "Rotating to face goal"
-            # angle = atan(y/x)
-            angle = atan2(y, x)
-            print angle
-            robot.rotateTo(angle)
+            robot.target_angle = atan2(y, x)
+            print robot.target_angle
+            robot.rotateTo(robot.target_angle)
             print "Done Rotating, now moving towards goal"
+            temp = robot.phi
             robot.resetCounts()
-            robot.phi = angle
-            robot.go(robot.FULL_SPEED)
+            robot.phi = temp
+            # A little bit of fine tuning for curving.
+
+            #robot.go(robot.FULL_SPEED)
 
     class Move_forward(Action):
         def __init__(self, robot):
