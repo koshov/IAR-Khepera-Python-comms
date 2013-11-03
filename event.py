@@ -121,18 +121,19 @@ class Reached_Positon(Event):
             self.robot.Go_to(self.robot, self.x, self.y)
             #return False
         #return not((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200))
-        print 'stop'
+        #print 'stop'
         return (abs(self.robot.x) - abs(self.x))**2 + (abs(self.robot.y) - abs(self.y))**2 < 20**2
             #if ((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200)):
             ##Check if the current robot coordinates are the ones we expect
             #if(self.robot.x < abs(self.x) + 50) or (self.robot.x > self.x+50)
 
     def call(self):
-        self.robot.stop()
+        # self.robot.stop()
+        self.robot.state.nextWaypoint()
         print "Reached position %f %f" %(self.robot.x, self.robot.y)
 
     def transition(self):
-        return state.Initial(self.robot)
+        return None
 
 class SpottedFood(Event):
     def __init__(self, robot):

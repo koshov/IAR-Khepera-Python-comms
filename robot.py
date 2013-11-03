@@ -126,9 +126,11 @@ class Robot():
             temp = robot.phi
             robot.resetCounts()
             robot.phi = temp
-            # A little bit of fine tuning for curving.
 
-            #robot.go(robot.FULL_SPEED)
+    class Follow_Path(Action):
+        def __init__(self, robot, pointsArray):
+
+            print "Going to waypoint %f %f"
 
     class Move_forward(Action):
         def __init__(self, robot):

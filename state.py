@@ -14,6 +14,23 @@ class Initial(State):
         self.events = [event.Obsticle(robot)]
         # + self.action.events
 
+class Follow_Path(State):
+
+     def __init__(self, robot, pointsArray):
+        self.name = "Following Path"
+        self.robot = robot
+        self.pointsArray = pointsArray
+        self.i = 0
+        self.setAction()
+
+     def nextWaypoint(self):
+         self.i += self.i
+
+     def setAction(self):
+         (x, y) = self.pointsArray[self.i]
+         self.action = self.robot.Go_to(self.robot, x, y)
+         self.events = [event.Reached_Positon(self.robot, x, y)]
+
 class Moving_To_Target(State):
     def __init__(self, robot, x, y):
         self.name = "Going To Set Coordinates"
