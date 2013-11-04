@@ -119,8 +119,7 @@ class Robot():
     class Go_to(Action):
         def __init__(self, robot, x, y):
             print "Rotating to face goal"
-            robot.target_angle = atan2(y, x)
-            print robot.target_angle
+            robot.target_angle = atan2(y-robot.y, x-robot.x)
             robot.rotateTo(robot.target_angle)
             print "Done Rotating, now moving towards goal"
             temp = robot.phi
@@ -163,64 +162,49 @@ class Robot():
                 self.robot.setSpeeds(5, -5)
                 self.events = [event.Parallel_completed(robot, [4, 5])]
 
-    # class GoHome(Action):
-    #     def __init__(self, robot):
-    #         self.robot = robot
-    #         robot.stop()
-    #         alpha = atan(robot.y / robot.x)
-
-    #         if ((self.robot.phi - alpha) > pi):
-    #             destination = pi - robot.phi - alpha
-    #         else:
-    #             destination = robot.phi - alpha - pi
-
-    #         destination = pi - (robot.phi % (2 * pi)) - alpha
-    #         robot.phi = robot.phi % (2 * pi)
-    #         robot.rotateTo(destination)
-    #         self.events = []
-
-    # ==== Helper Actions ====
-    # def goTo(self, x):
-    #     self.resetCounts()
-
-    #     self.go(self.FULL_SPEED)
-    #     while self.x < x:
-    #         data = self.readCount()
-    #         if len(data) == 2:
-    #             left_n = int(data[0])
-    #             right_n = int(data[1])
-    #             left_d = left_n - self.left_l
-    #             self.left_l = left_n
-    #             right_d = right_n - self.right_l
-    #             self.right_l = right_n
-    #             print "L: %f R: %f"%(left_d, right_d)
-    #             self.setOdometry(left_d, right_d)
-
-    #     self.stop()
 
     def rotateTo(self, phi):
-        print "Target: %f"%phi
-        print "At %f"%self.phi
-        if phi > 0:
-            self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+
+        robot_phi = self.phi % (2*pi)
+        target = phi % (2*pi)
+
+        if (robot_phi - target) < 0:
+            if (target - robot_phi) > pi:
+                rot = (2*pi) - target - robot_phi
+                self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
+            else:
+                rot = target - robot_phi
+                self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
         else:
-            self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
+            if robot_phi - target > pi:
+                rot = (2*pi) - target - robot_phi
+                self.setSpeeds(-self.FULL_SPEED, self.FULL_SPEED)
+            else:
+                rot = robot_phi - target
+                self.setSpeeds(self.FULL_SPEED, -self.FULL_SPEED)
 
-        start_phi = self.phi
 
-        while (phi>0 and self.phi < start_phi + phi) or (phi < 0 and self.phi > start_phi + phi):
+        # if robot_phi > pi: robot_phi = 2*pi - robot_phi
+
+        print "Target: %f"%target
+        print "At %f"%robot_phi
+        print "I should rotate by: %f" %rot
+
+        while abs(robot_phi - target) > 0.1:
             data = self.readCount()
             if len(data) == 2:
                 left_n = int(data[0])
                 right_n = int(data[1])
+
                 left_d = left_n - self.left_l
                 self.left_l = left_n
                 right_d = right_n - self.right_l
                 self.right_l = right_n
-                # print "L: %f R: %f"%(left_d, right_d)
                 self.setOdometry(left_d, right_d)
 
-        self.stop()
+                robot_phi = self.phi % (2*pi)
+
+        # self.stop()
 
 
     # ==== Khepera Functions ====
@@ -246,8 +230,11 @@ class Robot():
         if len(result) < 8:
             return None
         for value in result:
-            value = int(value)
-            if value < 0 or value > 1024:
+            try:
+                value = int(value)
+                if value < 0 or value > 1024:
+                    return None
+            except ValueError, e:
                 return None
         return result
 

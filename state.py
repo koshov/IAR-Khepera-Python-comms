@@ -24,14 +24,19 @@ class Follow_Path(State):
         self.setAction()
 
      def nextWaypoint(self):
-         self.i += 1
-         if self.i <= len(self.pointsArray):
-             self.setAction()
+        self.i += 1
+        if self.i < len(self.pointsArray):
+            self.setAction()
+        else:
+            print 'Maika ti paidjina'
+            self.robot.stop()
+            self.robot.state = State(self.robot)
+
 
      def setAction(self):
-         (x, y) = self.pointsArray[self.i]
-         self.action = self.robot.Go_to(self.robot, x, y)
-         self.events = [event.Reached_Positon(self.robot, x, y)]
+        (x, y) = self.pointsArray[self.i]
+        self.action = self.robot.Go_to(self.robot, x, y)
+        self.events = [event.Reached_Positon(self.robot, x, y)]
 
 class Moving_To_Target(State):
     def __init__(self, robot, x, y):

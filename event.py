@@ -1,5 +1,6 @@
-import state
+from math import pi
 from time import sleep
+import state
 
 
 class Event():
@@ -56,7 +57,7 @@ class Lost_obsticle(Event):
 
 class AtHome(Event):
     def __init__(self, robot):
-        self.robot = robot   
+        self.robot = robot
 
     def check(self):
         if abs(self.robot.x) < 50 and abs(self.robot.y) < 50:
@@ -81,50 +82,25 @@ class Reached_Positon(Event):
         self.robot = robot
         self.x = x
         self.y = y
-        if self.x < self.robot.x:
-            self.param_x = -123
-        else:
-            self.param_x = 123
 
-        if self.y < self.robot.y:
-            self.param_y = -123
-        else:
-            self.param_y = 123
-
-        self.bounding_x = self.x + self.param_x
-        self.bounding_y = self.y + self.param_y
+        self.bounding_r = (abs(self.x) - abs(self.robot.x))**2 + (abs(self.y) - abs(self.robot.y))**2
+        self.bounding_x = self.robot.x
+        self.bounding_y = self.robot.y
 
     def check(self):
-         # Check if the current robot coordinates are the ones we expect
-        # print 'Goal at: (%f, %f) we are at: (%f, %f)' % (self.x,self.y,self.robot.x,self.robot.y)
-        print 'Phi: %f, Target: %f'%(self.robot.phi, self.robot.target_angle)
-        # print 'angle is %f' %self.robot.phi
-        if self.robot.phi > self.robot.target_angle:
+        robot_phi = self.robot.phi % (2*pi)
+        target_phi = self.robot.target_angle % (2*pi)
+        # print 'Phi: %f, Target: %f'%(robot_phi, target_phi)
+        print 'G: %f, %f\nR: %f, %f'%(self.x, self.y, self.robot.x, self.robot.y)
+        if robot_phi > target_phi + target_phi * 0.1:
             self.robot.setSpeeds(5, 4)
-        elif self.robot.phi < self.robot.target_angle:
+        elif robot_phi < target_phi - target_phi * 0.1:
             self.robot.setSpeeds(4, 5)
         else:
             self.robot.setSpeeds(5, 5)
 
 
-        if self.param_x < 0:
-            x_reached = abs(self.bounding_x) > self.robot.x
-        else:
-            x_reached = abs(self.bounding_x) < self.robot.x
-
-        if self.param_y < 0:
-            y_reached = abs(self.bounding_y) > self.robot.y
-        else:
-            y_reached = abs(self.bounding_y) < self.robot.y
-
-        if x_reached or y_reached:
-            return True
-        #return not((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200))
-        #print 'stop'
-        return (abs(self.robot.x) - abs(self.x))**2 + (abs(self.robot.y) - abs(self.y))**2 < 200**2
-            #if ((abs(self.robot.x) <= abs(self.x)+200) and (abs(self.robot.y) <= abs(self.y)+200)):
-            ##Check if the current robot coordinates are the ones we expect
-            #if(self.robot.x < abs(self.x) + 50) or (self.robot.x > self.x+50)
+        return (abs(self.robot.x) - abs(self.bounding_x))**2 + (abs(self.robot.y) - abs(self.bounding_y))**2 > self.bounding_r
 
     def call(self):
         # self.robot.stop()
@@ -171,15 +147,15 @@ class Distance_changed(Event):
             front = 0
 
         if sensor_values is not None:
-            if self.wall_position == "left": 
+            if self.wall_position == "left":
                 gain_dir = ["left", "right"]
                 target_wall = sensor_values[0]
                 other_wall = sensor_values[5]
-            else: 
+            else:
                 gain_dir = ["right", "left"]
                 target_wall = sensor_values[5]
                 other_wall = sensor_values[0]
-                    
+
             # Escape from nearby wall
             if max([sensor_values[0], sensor_values[5]]) > self.THRESHOLD:
                 if target_wall > other_wall:
@@ -194,8 +170,8 @@ class Distance_changed(Event):
             # Move towards wall when loosing it
             else:
                 self.gain = (gain_dir[1], (1-self.THRESHOLD) - target_wall * (1-self.THRESHOLD)/self.THRESHOLD + front/self.robot.FULL_SPEED, front)
-                return True                    
- 
+                return True
+
         return False
 
     def call(self):
